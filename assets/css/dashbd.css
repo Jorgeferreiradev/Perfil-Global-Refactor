@@ -1,0 +1,106 @@
+/* === RESET Y BASE === */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  background-color: #f0f4f8;
+  color: #333;
+}
+
+/* Fondo con opacidad como capa detrás */
+body::before {
+  content: "";
+  background-image: url("../../componentes/fesc.jpg"); /* ← usa esta ruta relativa desde tu CSS */
+  background-size: cover;
+  background-position: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.65; /* ← ajustá esto a gusto */
+  z-index: -1; /* ← manda el fondo atrás */
+}
+
+
+
+/* === ENCABEZADO === */
+header {
+  background-color: #2c3e50;
+  color: white;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+
+
+/* === CONTENEDOR GENERAL === */
+main {
+  display: flex;
+  justify-content: flex-end;
+  padding: 2rem;
+}
+
+/* === CONTENEDOR DE TARJETAS === */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* ← más angostas */
+  gap: 1rem;  /* más compacto si querés */
+  max-width: 700px; /* opcional: límite general */
+  width: 100%;
+}
+
+
+/* === TARJETAS === */
+.card {
+  background-color: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: scale(1.05);
+}
+
+/* === ICONO === */
+.icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  display: block;
+  color: #3498db;
+}
+
+/* === ENLACE === */
+.card a {
+  text-decoration: none;
+  color: #2980b9;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.card a:hover {
+  text-decoration: underline;
+  color: #981414;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  main {
+    justify-content: center;
+  }
+
+  .card-grid {
+    max-width: 100%;
+  }
+}
