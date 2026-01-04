@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 ```
 perfilglobal_v2
@@ -1185,3 +1186,7 @@ perfilglobal_v2
          └─ VERSION
 
 ```
+=======
+# PERFIL-GLOBAL---MVP-A-V2
+V2_PLAN DE REESTRUCTURACION   Y REFACTORIZACION COMPLETA
+>>>>>>> 323a75906bfe5e961fd25f089732da377a806a48
