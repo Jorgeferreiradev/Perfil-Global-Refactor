@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Si lo que piden es un archivo que sí existe (imagen, css), cárgalo normal
+RewriteCond %{REQUEST_FILENAME} !-f
+# Si lo que piden es una carpeta que sí existe, cárgala normal
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# De lo contrario, envía todo al index.php usando el parámetro 'url'
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
