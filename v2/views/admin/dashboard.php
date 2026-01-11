@@ -86,6 +86,9 @@
             </div>
         </div>
 
+        
+
+
         <div class="card card-custom p-4 bg-white mt-2">
             <h5>Bienvenido a la Versión 2.0</h5>
             <p>Desde aquí podrás gestionar la carga masiva de estudiantes y el control de asistencia para los eventos de la FESC.</p>
@@ -95,9 +98,22 @@
         <h5 class="fw-bold"><i class="bi bi-file-earmark-excel me-2 text-success"></i>Carga Masiva de Estudiantes</h5>
         <a href="assets/plantilla_estudiantes.xlsx" class="btn btn-sm btn-outline-secondary">Descargar Plantilla</a>
     </div>
-    
-    <form action="admin/importar-usuarios" method="POST" enctype="multipart/form-data">
-        <div class="row align-items-end">
+
+    #ALERTAS DE PRUEBA
+                <?php if(isset($_SESSION['success'])): ?>
+                <div style="color: green; background: #d4edda; padding: 10px; margin-bottom: 10px;">
+                <?= $_SESSION['success']; unset($_SESSION['success']); ?>
+                </div>
+                <?php endif; ?>
+
+                <?php if(isset($_SESSION['error'])): ?>
+                <div style="color: red; background: #f8d7da; padding: 10px; margin-bottom: 10px;">
+                <?= $_SESSION['error']; unset($_SESSION['error']); ?>
+                </div>
+                <?php endif; ?>
+
+    <form action="<?= $_ENV['APP_URL'] ?>/admin/importar-usuarios" method="POST" enctype="multipart/form-data">
+            <div class="row align-items-end">
             <div class="col-md-8">
                 <label class="form-label small fw-bold">Seleccionar archivo Excel (.xlsx)</label>
                 <input type="file" name="archivo_excel" class="form-control" accept=".xlsx, .xls" required>

@@ -1,4 +1,5 @@
 <?php
+#die("El index está recibiendo la ruta: " . $_GET['url']);
 require_once __DIR__ . '/../vendor/autoload.php';
 
 // Cargar variables de entorno
@@ -9,7 +10,6 @@ use App\Controllers\AuthController;
 use App\Controllers\AdminController;
 
 session_start();
-
 // Capturamos la variable 'url' que viene del .htaccess
 $url = $_GET['url'] ?? 'login';
 $url = rtrim($url, '/');
@@ -23,6 +23,8 @@ if ($url === 'login' || $url === '') {
 } elseif ($url === 'admin/dashboard') {
     $admin = new AdminController();
     $admin->dashboard();
+    } elseif ($url === 'admin/importar-usuarios') { // <--- ESTA ES LA RUTA importar-usuarios
+    (new AdminController())->importarUsuarios();
 } else {
     echo "404 - Ruta no encontrada: " . $url;
 }
