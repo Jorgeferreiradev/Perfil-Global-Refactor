@@ -92,4 +92,16 @@ class Persona {
             default          => 5,
         };
     }
+
+/**
+ * Cuenta el total de personas activas en el sistema
+ */
+    public function contarTotal() {
+        $sql = "SELECT COUNT(*) as total FROM personas WHERE deleted_at IS NULL";
+        $stmt = $this->db->query($sql);
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $resultado['total'] ?? 0;
+    }
+
+
 }

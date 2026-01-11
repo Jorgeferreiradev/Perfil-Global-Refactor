@@ -68,7 +68,7 @@
             <div class="col-md-4 mb-4">
                 <div class="card card-custom p-4 bg-white">
                     <h6 class="text-muted">Total Usuarios</h6>
-                    <h2 class="fw-bold">0</h2>
+                        <h2 class="fw-bold"><?= $totalUsuarios ?? 0 ?></h2>
                     <p class="text-primary mb-0"><i class="bi bi-arrow-up"></i> Inicia carga masiva</p>
                 </div>
             </div>

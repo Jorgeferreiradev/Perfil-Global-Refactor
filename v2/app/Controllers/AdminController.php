@@ -15,9 +15,25 @@ class AdminController {
     }
 
     public function dashboard() {
-        $nombre = $_SESSION['user_name'] ?? 'Administrador';
-        require_once __DIR__ . '/../../views/admin/dashboard.php';
-    }
+    // 1. Instanciamos los modelos
+    $personaModel = new \App\Models\Persona();
+    $eventoModel = new \App\Models\Evento();
+    $certificadoModel = new \App\Models\Certificado();
+    
+    // 2. Obtenemos los conteos
+    $totalUsuarios = $personaModel->contarTotal();
+    $totalEventos = $eventoModel->contarProximos();
+    $totalCertificados = $certificadoModel->contarTotal();
+
+
+    // 3. (Opcional) Puedes traer más datos aquí, como total por comunidad
+    $nombre = $_SESSION['user_name'] ?? 'Administrador';
+    
+    // 4. Cargamos la vista (ahora la variable $totalUsuarios estará disponible allá)
+    require_once __DIR__ . '/../../views/admin/dashboard.php';
+}
+
+
 
 public function importarUsuarios() {
 /* ESTO ES PARA DEPURAR:
@@ -56,4 +72,7 @@ public function importarUsuarios() {
         exit;
         }
     }
+
+
+
 }
