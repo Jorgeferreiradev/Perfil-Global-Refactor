@@ -74,14 +74,14 @@
             </div>
             <div class="col-md-4 mb-4">
                 <div class="card card-custom p-4 bg-white border-start border-info border-4">
-                    <h6 class="text-muted">Próximos Eventos</h6>
-                    <h2 class="fw-bold">0</h2>
+                    <h6 class="text-muted">Eventos Generados</h6>
+                        <h2 class="fw-bold"><?= $totalEventos ?? 0 ?></h2>
                 </div>
             </div>
             <div class="col-md-4 mb-4">
                 <div class="card card-custom p-4 bg-white">
                     <h6 class="text-muted">Certificados Generados</h6>
-                    <h2 class="fw-bold">0</h2>
+                        <h2 class="fw-bold"><?= $totalCertificados ?? 0 ?></h2>
                 </div>
             </div>
         </div>

@@ -18,12 +18,12 @@ class AdminController {
     // 1. Instanciamos los modelos
     $personaModel = new \App\Models\Persona();
     $eventoModel = new \App\Models\Evento();
-    $certificadoModel = new \App\Models\Certificado();
+    //$certificadoModel = new \App\Models\Certificado();
     
     // 2. Obtenemos los conteos
     $totalUsuarios = $personaModel->contarTotal();
     $totalEventos = $eventoModel->contarProximos();
-    $totalCertificados = $certificadoModel->contarTotal();
+    //$totalCertificados = $certificadoModel->contarTotal();
 
 
     // 3. (Opcional) Puedes traer más datos aquí, como total por comunidad
