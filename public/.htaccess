@@ -7,3 +7,16 @@ RewriteCond %{REQUEST_FILENAME} !-d
 
 # De lo contrario, envía todo al index.php usando el parámetro 'url'
 RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+
+RewriteRule ^ index.php [QSA,L]
+
+# --- NUEVO: Configuración de Carga de Archivos ---
+# Aumentamos el límite de subida a 15 Megas
+php_value upload_max_filesize 15M
+
+# El tamaño total del POST debe ser mayor al del archivo (ej. 20M)
+php_value post_max_size 20M
+
+# Tiempo máximo para subir el archivo (por si el internet es lento)
+php_value max_execution_time 300
+php_value max_input_time 300

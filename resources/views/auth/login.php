@@ -24,7 +24,7 @@
         </div>
     <?php endif; ?>
 
-    <form action="autenticar" method="POST">
+<form action="/perfilglobal_v2/public/auth/login" method="POST">        
         <div class="mb-3">
             <label class="form-label">Correo Institucional</label>
             <input type="email" name="correo" class="form-control" placeholder="ejemplo@fesc.edu.co" required>
@@ -33,11 +33,11 @@
             <label class="form-label">Contraseña</label>
             <input type="password" name="password" class="form-control" placeholder="••••••••" required>
         </div>
-        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Entrar al Sistema</button>
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Ingresar</button>
     </form>
     
     <div class="text-center mt-3 small">
-        <a href="#" class="text-decoration-none">¿Olvidaste tu contraseña?</a>
+        <a href="/auth/forgot-password" class="text-decoration-none">¿Olvidaste tu contraseña?</a>
     </div>
 </div>
 

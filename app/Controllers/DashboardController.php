@@ -1,45 +1,29 @@
 <?php
 namespace App\Controllers;
 
-use App\Models\Usuario;
-use App\Models\Evento;
-use App\Models\Asistencia;
-
 class DashboardController {
-
+    
     public function index() {
-        // 1. Verificación de Seguridad
+        // 1. Verificar sesión (Doble check de seguridad)
         if (session_status() === PHP_SESSION_NONE) session_start();
         
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: ' . $_ENV['APP_URL'] . '/login');
-            exit;
+        $rol = $_SESSION['user_rol'] ?? 'monitor';
+
+        // Variables para la vista
+        $title = "Dashboard - " . ucfirst($rol);
+        $active = 'dashboard';
+
+        // 2. Cargar las Vistas (Rutas corregidas apuntando a resources)
+        require_once __DIR__ . '/../../resources/views/layouts/header.php';
+        require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
+
+        // 3. Cargar el cuerpo según el rol
+        if ($rol === 'admin' || $rol === 'dev') {
+            require_once __DIR__ . '/../../resources/views/dashboard/admin.php';
+        } else {
+            require_once __DIR__ . '/../../resources/views/dashboard/monitor.php';
         }
 
-        // 2. Instanciar Modelos para obtener datos reales
-        $userModel = new Usuario();
-        $eventoModel = new Evento();
-        $asistenciaModel = new Asistencia();
-
-        $rol = $_SESSION['rol'] ?? 'monitor';
-
-        // 3. Obtención de conteos reales (Asegúrate de tener estos métodos en tus modelos)
-        $data = [
-            'titulo'            => 'Panel de Control | PG V2',
-            'nombre'            => $_SESSION['user_name'] ?? 'Usuario',
-            'rol'               => $rol,
-            'active'            => 'inicio',
-            'totalUsuarios'     => $userModel->countAll(), // CU-C02: Total personas en BD
-            'totalEventos'      => $eventoModel->countAll(), // Total eventos creados
-            'totalCertificados' => $asistenciaModel->countAll() // Total asistencias (certificados)
-        ];
-
-        // 4. Determinación de la vista de contenido según el README
-        $data['viewContent'] = __DIR__ . "/../../views/dashboard/{$rol}.php";
-
-        // 5. Inyección de datos y carga del Layout "Pegamento"
-        extract($data);
-        require_once __DIR__ . '/../../views/layouts/layout.php';
+        require_once __DIR__ . '/../../resources/views/layouts/footer.php';
     }
 }
-    echo "404 - Página no encontrada";

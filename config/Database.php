@@ -3,31 +3,33 @@ namespace Config;
 
 use PDO;
 use PDOException;
-use Exception;
 
 class Database {
     private static $instance = null;
     private $conn;
 
     private function __construct() {
-        // En producción, esto cargará desde el .env
-        $host = 'localhost';
-        $db   = 'perfilglobal_v2';
-        $user = 'root';
-        $pass = '';
+        // Cargar variables de entorno si usas PHP dotenv, o definir manual
+        $host = $_ENV['DB_HOST'] ?? 'localhost';
+        $db   = $_ENV['DB_NAME'] ?? 'perfilglobal_v2';
+        $user = $_ENV['DB_USER'] ?? 'root';
+        $pass = $_ENV['DB_PASS'] ?? '';
 
         try {
-            $this->conn = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
+            $dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";
+            $this->conn = new PDO($dsn, $user, $pass);
+            // Configuración de errores y modo de fetch por defecto
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Error de conexión: " . $e->getMessage());
+            die("Error de conexión a BD: " . $e->getMessage());
         }
     }
 
+    // Patrón Singleton: Solo una instancia
     public static function getInstance() {
-        if (self::$instance === null) {
-            self::$instance = new self();
+        if (!self::$instance) {
+            self::$instance = new Database();
         }
         return self::$instance->conn;
     }

@@ -1,78 +1,133 @@
 <?php
 namespace App\Controllers;
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use App\Models\Persona;
-use App\Models\Log;
+use App\Services\ImportService;
 
 class AdminController {
-    
-    public function __construct() {
-        if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'admin') {
-            header('Location: ' . $_ENV['APP_URL'] . '/login');
+
+    // ... (métodos anteriores de carga masiva)
+
+    /**
+     * Muestra la lista de usuarios y el formulario de creación
+     */
+    public function gestionarUsuarios() {
+        $title = "Gestión de Usuarios del Sistema";
+        $active = "usuarios";
+        
+        // Obtener todos los usuarios (menos el propio admin para no auto-borrarse)
+        $db = \Config\Database::getInstance();
+        $stmt = $db->prepare("SELECT * FROM usuarios_sistema WHERE deleted_at IS NULL AND id != :myId ORDER BY rol, apellidos");
+        $stmt->execute([':myId' => $_SESSION['user_id']]);
+        $usuarios = $stmt->fetchAll();
+
+        require_once __DIR__ . '/../../views/layouts/header.php';
+        require_once __DIR__ . '/../../views/layouts/sidebar.php';
+        require_once __DIR__ . '/../../views/admin/usuarios.php';
+        require_once __DIR__ . '/../../views/layouts/footer.php';
+    }
+
+    /**
+     * Guarda un nuevo monitor, admin o dev
+     */
+    public function guardarUsuario() {
+        // Validar campos
+        if (empty($_POST['nombres']) || empty($_POST['correo']) || empty($_POST['password'])) {
+            header('Location: /dashboard/admin/usuarios?error=campos_vacios');
             exit;
         }
-    }
 
-    public function dashboard() {
-    // 1. Instanciamos los modelos
-    $personaModel = new \App\Models\Persona();
-    $eventoModel = new \App\Models\Evento();
-    //$certificadoModel = new \App\Models\Certificado();
-    
-    // 2. Obtenemos los conteos
-    $totalUsuarios = $personaModel->contarTotal();
-    $totalEventos = $eventoModel->contarProximos();
-    //$totalCertificados = $certificadoModel->contarTotal();
+        $nombres = trim($_POST['nombres']);
+        $apellidos = trim($_POST['apellidos']);
+        $correo = trim($_POST['correo']);
+        $rol = $_POST['rol'];
+        // Hash seguro de contraseña
+        $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
 
+        $db = \Config\Database::getInstance();
 
-    // 3. (Opcional) Puedes traer más datos aquí, como total por comunidad
-    $nombre = $_SESSION['user_name'] ?? 'Administrador';
-    
-    // 4. Cargamos la vista (ahora la variable $totalUsuarios estará disponible allá)
-    require_once __DIR__ . '/../../views/admin/dashboard.php';
-}
-
-
-
-public function importarUsuarios() {
-/* ESTO ES PARA DEPURAR:
-    echo "<pre>";
-    print_r($_FILES); // Ver si llega el archivo
-    print_r($_POST);  // Ver si llega el resto
-    echo "</pre>";
-    die("Detenido para inspección");*/
-
-
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_excel'])) {
-        $log = new \App\Models\Log();
-        try {
-            // 1. Cargar el archivo temporalmente
-            $file = $_FILES['archivo_excel']['tmp_name'];
-            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file);
-            $data = $spreadsheet->getActiveSheet()->toArray();
-
-            // 2. Ejecutar la lógica en el modelo
-            $personaModel = new \App\Models\Persona();
-            $personaModel->importarMasivo($data);
-
-            // 3. Registrar auditoría (Buena práctica senior)
-            $total = count($data) - 1;
-            $log->registrar($_SESSION['user_id'], "Carga masiva exitosa: $total registros.");
-            
-            $_SESSION['success'] = "¡Éxito! $total registros procesados.";
-        } catch (\Exception $e) {
-            $log->registrar($_SESSION['user_id'], "Error en carga: " . $e->getMessage());
-            $_SESSION['error'] = "Error: " . $e->getMessage();
+        // Verificar duplicados
+        $check = $db->prepare("SELECT id FROM usuarios_sistema WHERE correo = :correo");
+        $check->execute([':correo' => $correo]);
+        if ($check->fetch()) {
+            header('Location: /dashboard/admin/usuarios?error=correo_duplicado');
+            exit;
         }
+
+        // Insertar
+        $sql = "INSERT INTO usuarios_sistema (nombres, apellidos, correo, password, rol) 
+                VALUES (:nom, :ape, :cor, :pass, :rol)";
+        $stmt = $db->prepare($sql);
         
-        // Redirección absoluta (el secreto para evitar el admin/admin)
-        header('Location: ' . $_ENV['APP_URL'] . '/admin/dashboard');
-        exit;
+        if ($stmt->execute([
+            ':nom' => $nombres, 
+            ':ape' => $apellidos, 
+            ':cor' => $correo, 
+            ':pass' => $password, 
+            ':rol' => $rol
+        ])) {
+            header('Location: /dashboard/admin/usuarios?success=creado');
+        } else {
+            header('Location: /dashboard/admin/usuarios?error=db_error');
         }
     }
 
+    /**
+     * "Elimina" un usuario (Soft Delete)
+     */
+    public function eliminarUsuario($id) {
+        // Validación de seguridad básica
+        if (!is_numeric($id)) die("ID Inválido");
+
+        $db = \Config\Database::getInstance();
+        
+        // Soft Delete: No borramos el registro, solo marcamos deleted_at
+        // Esto mantiene la integridad referencial de los eventos que creó ese usuario.
+        $stmt = $db->prepare("UPDATE usuarios_sistema SET deleted_at = NOW() WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+
+        header('Location: /dashboard/admin/usuarios?success=eliminado');
+    }
 
 
+    public function vistaCargaMasiva() {
+        $title = "Carga Masiva de Usuarios";
+        $active = "carga-masiva"; // Para resaltar en sidebar
+        
+        require_once __DIR__ . '/../../views/layouts/header.php';
+        require_once __DIR__ . '/../../views/layouts/sidebar.php';
+        require_once __DIR__ . '/../../views/admin/carga_masiva.php';
+        require_once __DIR__ . '/../../views/layouts/footer.php';
+    }
+
+    public function procesarCarga() {
+        // 1. Validar que se subió un archivo
+        if (!isset($_FILES['archivo_excel']) || $_FILES['archivo_excel']['error'] !== UPLOAD_ERR_OK) {
+            header('Location: /dashboard/admin/carga-masiva?error=archivo_invalido');
+            exit;
+        }
+
+        $archivo = $_FILES['archivo_excel'];
+        $ext = pathinfo($archivo['name'], PATHINFO_EXTENSION);
+
+        // 2. Validar extensión
+        if (!in_array(strtolower($ext), ['xlsx', 'xls', 'csv'])) {
+            header('Location: /dashboard/admin/carga-masiva?error=formato_incorrecto');
+            exit;
+        }
+
+        // 3. Procesar usando el Servicio
+        $importService = new ImportService();
+        $resultado = $importService->procesarArchivo($archivo['tmp_name']);
+
+        if (isset($resultado['error_fatal'])) {
+            // Guardar error en sesión para mostrarlo
+            $_SESSION['flash_error'] = $resultado['error_fatal'];
+            header('Location: /dashboard/admin/carga-masiva');
+            exit;
+        }
+
+        // 4. Éxito
+        $msg = "Proceso finalizado. Nuevos: {$resultado['nuevos']}, Actualizados: {$resultado['actualizados']}";
+        header('Location: /dashboard/admin/carga-masiva?success=' . urlencode($msg));
+    }
 }
