@@ -1,25 +1,26 @@
 <nav class="sidebar shadow-sm" id="sidebar">
-    <div class="py-3 px-3 text-uppercase small fw-bold text-muted">Menú Principal</div>
+    <div class="py-3 px-3 text-uppercase small fw-bold text-muted">Operación</div>
     
     <a href="<?= BASE_URL ?>/dashboard" class="<?= ($active == 'dashboard') ? 'active' : '' ?>">
-        <i class="fas fa-tachometer-alt me-3" style="width:20px"></i> Dashboard
+        <i class="fas fa-home me-3" style="width:20px"></i> Inicio
     </a>
     
     <a href="<?= BASE_URL ?>/dashboard/eventos" class="<?= ($active == 'eventos') ? 'active' : '' ?>">
-        <i class="fas fa-calendar-check me-3" style="width:20px"></i> Mis Eventos
+        <i class="fas fa-qrcode me-3" style="width:20px"></i> Eventos & QR
     </a>
 
-    <?php if($_SESSION['user_rol'] === 'admin' || $_SESSION['user_rol'] === 'dev'): ?>
-        <div class="py-3 px-3 mt-3 text-uppercase small fw-bold text-muted">Administración</div>
+    <?php if($_SESSION['user_rol'] === 'admin'): ?>
+        <hr class="my-3 mx-3 border-secondary">
+        <div class="py-2 px-3 text-uppercase small fw-bold text-danger">Administración</div>
         
         <a href="<?= BASE_URL ?>/dashboard/admin/usuarios" class="<?= ($active == 'usuarios') ? 'active' : '' ?>">
             <i class="fas fa-users-cog me-3" style="width:20px"></i> Usuarios
         </a>
         <a href="<?= BASE_URL ?>/dashboard/admin/carga-masiva" class="<?= ($active == 'carga-masiva') ? 'active' : '' ?>">
-            <i class="fas fa-database me-3" style="width:20px"></i> Carga Masiva
+            <i class="fas fa-cloud-upload-alt me-3" style="width:20px"></i> Carga Masiva
         </a>
         <a href="<?= BASE_URL ?>/dashboard/admin/reportes" class="<?= ($active == 'reportes') ? 'active' : '' ?>">
-            <i class="fas fa-file-excel me-3" style="width:20px"></i> Reportes
+            <i class="fas fa-chart-line me-3" style="width:20px"></i> Reportes
         </a>
     <?php endif; ?>
 </nav>

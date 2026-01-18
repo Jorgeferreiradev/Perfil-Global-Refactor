@@ -16,36 +16,28 @@ class AuthController {
     }
 
     public function login() {
-        $email = filter_input(INPUT_POST, 'correo', FILTER_SANITIZE_EMAIL);
-        $password = $_POST['password'] ?? '';
+    $email = filter_input(INPUT_POST, 'correo', FILTER_SANITIZE_EMAIL);
+    $password = $_POST['password'] ?? '';
 
-        $usuarioModel = new Usuario();
-        $user = $usuarioModel->findByEmail($email);
+    $usuarioModel = new Usuario();
+    $user = $usuarioModel->findByEmail($email);
 
-        // Verificar usuario y contraseña (hash)
-        if ($user && password_verify($password, $user['password'])) {
-            // Login Exitoso: Guardar datos en sesión
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_nombre'] = $user['nombres'] . ' ' . $user['apellidos'];
-            $_SESSION['user_rol'] = $user['rol']; 
-            $_SESSION['last_activity'] = time();
+    if ($user && password_verify($password, $user['password'])) {
+        // 1. Guardar sesión básica
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_nombre'] = $user['nombres'] . ' ' . $user['apellidos'];
+        $_SESSION['user_rol'] = $user['rol']; // Solo será 'admin' o 'monitor'
+        $_SESSION['last_activity'] = time();
 
-            // Configurar Sandbox si es DEV
-            if ($user['rol'] === 'dev') {
-                $_SESSION['is_sandbox'] = true;
-            }
-
-            // 2. CAMBIO: Esta es la línea que te estaba fallando al ingresar
-            header('Location: ' . BASE_URL . '/dashboard'); // <--- CAMBIO AQUÍ
-            exit;
-        } else {
-            // Error
-            $_SESSION['error'] = 'Credenciales inválidas';
-            // 3. CAMBIO: Si falla, volver al login correcto
-            header('Location: ' . BASE_URL . '/login'); // <--- CAMBIO AQUÍ
-            exit;
-        }
+        // 2. Redirigir al Dashboard Único
+        header('Location: ' . BASE_URL . '/dashboard');
+        exit;
+    } else {
+        $_SESSION['error'] = 'Credenciales inválidas';
+        header('Location: ' . BASE_URL . '/login');
+        exit;
     }
+}
 
     public function logout() {
         // HU-D02: Limpieza automática si es DEV
