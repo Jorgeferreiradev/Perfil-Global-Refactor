@@ -6,6 +6,8 @@
     <title><?= $title ?? 'PerfilGlobal V2' ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="<?= BASE_URL ?>/favicon.ico">
+
     <style>
         body { min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
         .wrapper { display: flex; flex: 1; }
@@ -23,7 +25,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary sticky-top">
     <div class="container-fluid">
         <button class="btn btn-outline-light btn-sm me-3 d-md-none" id="sidebarToggle"><i class="fas fa-bars"></i></button>
-        <a class="navbar-brand fw-bold" href="#">PerfilGlobal <span class="text-primary">V2</span></a>
+        <a class="navbar-brand fw-bold" href="#">Perfil <span class="text-primary">Global</span></a>
         
         <div class="d-flex align-items-center">
             <?php if(isset($_SESSION['is_sandbox'])): ?>

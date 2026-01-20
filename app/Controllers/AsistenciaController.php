@@ -2,58 +2,89 @@
 namespace App\Controllers;
 
 use App\Models\Evento;
-use App\Models\Asistencia;
 use App\Models\Persona;
+use App\Models\Asistencia;
+use DateTime;
 
 class AsistenciaController {
 
-    // 1. Mostrar el formulario al estudiante tras escanear QR
+    // 1. Mostrar el formulario al escanear el QR
     public function vistaRegistro($token) {
-        $eventoModel = new Evento();
-        $evento = $eventoModel->getByToken($token); // Debes crear este método en Evento Model
-
-        if (!$evento) {
-            die("Enlace inválido o expirado.");
-        }
-
-        // Vista simple para celular (Mobile First)
-        require_once __DIR__ . '/../../views/public/registro_asistencia.php';
-    }
-
-    // 2. Procesar el documento ingresado
-    public function registrar() {
-        $token = $_POST['token'];
-        $documento = $_POST['documento'];
-
-        // a. Validar Evento
         $eventoModel = new Evento();
         $evento = $eventoModel->getByToken($token);
 
-        // b. Buscar Estudiante (Persona)
+        // Validaciones de Seguridad (Senior Level)
+        if (!$evento) {
+            $this->mostrarError("Enlace inválido", "Este código QR no existe o ha sido eliminado.");
+            return;
+        }
+
+        // Validar Fechas (CU-C01: El link es temporal)
+        $ahora = new DateTime();
+        $inicio = new DateTime($evento['fecha_inicio'] . ' ' . $evento['hora_inicio']);
+        $fin    = new DateTime($evento['fecha_final'] . ' ' . $evento['hora_final']);
+
+        if ($ahora < $inicio) {
+            $this->mostrarError("Evento no iniciado", "El registro de asistencia aún no está habilitado.");
+            return;
+        }
+        if ($ahora > $fin) {
+            $this->mostrarError("Evento Finalizado", "El tiempo para registrar asistencia ha terminado.");
+            return;
+        }
+
+        // Si todo está bien, mostramos la vista
+        $title = "Registro - " . $evento['nombre_evento'];
+        require_once __DIR__ . '/../../resources/views/public/registro.php';
+    }
+
+    // 2. Procesar el formulario (POST)
+    public function registrar() {
+        $token = $_POST['token'] ?? '';
+        $doc   = trim($_POST['documento'] ?? '');
+
+        if (empty($token) || empty($doc)) {
+            die("Datos incompletos.");
+        }
+
+        // Buscamos el evento nuevamente
+        $eventoModel = new Evento();
+        $evento = $eventoModel->getByToken($token);
+
+        if (!$evento) die("Evento no válido.");
+
+        // Buscamos a la persona en la BASE MAESTRA (CU-A02)
         $personaModel = new Persona();
-        $estudiante = $personaModel->getByDocumento($documento); // Debes crear este método
+        $persona = $personaModel->getByDocumento($doc);
 
-        if (!$estudiante) {
-            // Manejo de error: Estudiante no existe en BD Maestra
-            header("Location: /asistencia/$token?error=no_encontrado");
+        if (!$persona) {
+            // Flujo Alternativo: Persona no existe en base de datos
+            // Redirigimos con error para que el estudiante contacte a soporte o se registre manual (Futuro CU)
+            header('Location: ' . BASE_URL . '/asistencia/' . $token . '?error=no_encontrado');
             exit;
         }
 
-        // c. Registrar Asistencia
+        // Verificamos duplicados
         $asistenciaModel = new Asistencia();
-        
-        // Evitar duplicados
-        if ($asistenciaModel->yaRegistro($evento['id_evento'], $estudiante['id'])) {
-            header("Location: /asistencia/$token?warning=ya_registrado");
+        if ($asistenciaModel->yaRegistrado($evento['id_evento'], $persona['id'])) {
+            header('Location: ' . BASE_URL . '/asistencia/' . $token . '?error=duplicado');
             exit;
         }
 
-        $asistenciaModel->create([
-            'id_evento' => $evento['id_evento'],
-            'persona_id' => $estudiante['id'],
-            'ip' => $_SERVER['REMOTE_ADDR']
+        // Guardamos
+        $asistenciaModel->registrar([
+            'id_evento'  => $evento['id_evento'],
+            'persona_id' => $persona['id'],
+            'id_periodo' => $evento['id_periodo']
         ]);
 
-        header("Location: /asistencia/$token?success=registrado");
+        // Éxito
+        header('Location: ' . BASE_URL . '/asistencia/' . $token . '?success=1&nombre=' . urlencode($persona['nombres']));
+        exit;
+    }
+
+    private function mostrarError($titulo, $mensaje) {
+        require_once __DIR__ . '/../../resources/views/public/error_asistencia.php';
+        exit;
     }
 }

@@ -1,110 +1,141 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-users-cog me-2"></i>Gestión de Usuarios</h2>
+    <div>
+        <h2 class="fw-bold"><i class="fas fa-users-cog me-2 text-primary"></i>Equipo de Trabajo</h2>
+        <p class="text-muted">Administra los accesos de Monitores y Administradores.</p>
+    </div>
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
-        <i class="fas fa-user-plus me-2"></i>Nuevo Usuario
+        <i class="fas fa-plus me-2"></i>Nuevo Usuario
     </button>
 </div>
 
 <?php if(isset($_GET['success'])): ?>
-    <div class="alert alert-success alert-dismissible fade show">
-        Operación realizada con éxito.
+    <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 border-start border-4 border-success">
+        <i class="fas fa-check-circle me-2"></i> Operación realizada con éxito.
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 <?php endif; ?>
+
 <?php if(isset($_GET['error']) && $_GET['error'] == 'correo_duplicado'): ?>
-    <div class="alert alert-danger">
-        El correo ingresado ya existe en el sistema.
+    <div class="alert alert-danger shadow-sm border-0 border-start border-4 border-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i> El correo ingresado ya existe en el sistema.
     </div>
 <?php endif; ?>
 
-<div class="card shadow-sm">
+<div class="card border-0 shadow-sm">
     <div class="card-body p-0">
-        <table class="table table-hover table-striped mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>Nombre</th>
-                    <th>Correo</th>
-                    <th>Rol</th>
-                    <th class="text-end">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach($usuarios as $usr): ?>
-                <tr>
-                    <td>
-                        <div class="fw-bold"><?= htmlspecialchars($usr['nombres'] . ' ' . $usr['apellidos']) ?></div>
-                    </td>
-                    <td><?= htmlspecialchars($usr['correo']) ?></td>
-                    <td>
-                        <?php 
-                        $badges = [
-                            'admin' => 'bg-danger',
-                            'monitor' => 'bg-info text-dark',
-                            'dev' => 'bg-warning text-dark'
-                        ];
-                        $badgeClass = $badges[$usr['rol']] ?? 'bg-secondary';
-                        ?>
-                        <span class="badge <?= $badgeClass ?>"><?= strtoupper($usr['rol']) ?></span>
-                    </td>
-                    <td class="text-end">
-                        <a href="/dashboard/admin/usuarios/eliminar/<?= $usr['id'] ?>" 
-                           class="btn btn-sm btn-outline-danger"
-                           onclick="return confirm('¿Estás seguro? Este usuario perderá acceso inmediato.');">
-                            <i class="fas fa-trash-alt"></i>
-                        </a>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-        <?php if(empty($usuarios)): ?>
-            <div class="p-4 text-center text-muted">No hay otros usuarios registrados.</div>
-        <?php endif; ?>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-secondary small text-uppercase">
+                    <tr>
+                        <th class="ps-4 py-3">Usuario</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th class="text-end pe-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if(empty($usuarios)): ?>
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="fas fa-user-friends fa-3x mb-3 opacity-25"></i>
+                                <br>No hay otros usuarios registrados aún.
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach($usuarios as $usr): ?>
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        <span class="fw-bold"><?= strtoupper(substr($usr['nombres'], 0, 1)) ?></span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark"><?= htmlspecialchars($usr['nombres'] . ' ' . $usr['apellidos']) ?></div>
+                                        <div class="small text-muted"><?= htmlspecialchars($usr['correo']) ?></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <?php if($usr['rol'] === 'admin'): ?>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 rounded-pill">ADMIN</span>
+                                <?php else: ?>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 rounded-pill">MONITOR</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <span class="badge bg-success bg-opacity-10 text-success"><i class="fas fa-circle small me-1"></i> Activo</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-secondary" title="Editar (Próximamente)" disabled>
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                    <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/eliminar/<?= $usr['id'] ?>" 
+                                       class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('¿Estás SEGURO de revocar acceso a este usuario?\n\nEsta acción no se puede deshacer fácilmente.');">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalNuevoUsuario" tabindex="-1">
+<div class="modal fade" id="modalNuevoUsuario" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="/dashboard/admin/usuarios/guardar" method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title">Registrar Nuevo Usuario</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Nombres</label>
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Nuevo Usuario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="<?= BASE_URL ?>/dashboard/admin/usuarios/guardar" method="POST">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Nombres</label>
                             <input type="text" name="nombres" class="form-control" required>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Apellidos</label>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Apellidos</label>
                             <input type="text" name="apellidos" class="form-control" required>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Correo Institucional</label>
-                        <input type="email" name="correo" class="form-control" required placeholder="@fesc.edu.co">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Rol del Sistema</label>
-                        <select name="rol" class="form-select" required>
-                            <option value="monitor">Monitor (Gestión de Eventos)</option>
-                            <option value="admin">Administrador (Control Total)</option>
-                            <option value="dev">Desarrollador (Modo Sandbox)</option>
-                        </select>
-                        <div class="form-text small text-muted">
-                            <i class="fas fa-info-circle"></i> El rol <strong>DEV</strong> permite crear eventos de prueba que no afectan las estadísticas.
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-muted">Correo Institucional</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fas fa-envelope text-muted"></i></span>
+                                <input type="email" name="correo" class="form-control" placeholder="usuario@fesc.edu.co" required>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-muted">Rol en el Sistema</label>
+                            <select name="rol" class="form-select" required>
+                                <option value="monitor" selected>🔵 Monitor (Operativo)</option>
+                                <option value="admin">🔴 Administrador (Total)</option>
+                            </select>
+                            <div class="form-text small bg-light p-2 rounded mt-2 border">
+                                <i class="fas fa-info-circle text-primary"></i> 
+                                <strong>El Monitor</strong> solo puede gestionar Eventos y Asistencia.
+                                <br>
+                                <strong>El Admin</strong> Acceso total: Carga Masiva y Gestión de Usuarios.
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-muted">Contraseña Inicial</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fas fa-lock text-muted"></i></span>
+                                <input type="password" name="password" class="form-control" required minlength="6" placeholder="Mínimo 6 caracteres">
+                            </div>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Contraseña Inicial</label>
-                        <input type="password" name="password" class="form-control" required minlength="6">
-                    </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Crear Usuario</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4">Crear Usuario</button>
                 </div>
             </form>
         </div>

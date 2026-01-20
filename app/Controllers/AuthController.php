@@ -40,12 +40,7 @@ class AuthController {
 }
 
     public function logout() {
-        // HU-D02: Limpieza automática si es DEV
-        if (isset($_SESSION['user_rol']) && $_SESSION['user_rol'] === 'dev') {
-            $model = new Usuario();
-            $model->cleanSimulationData();
-        }
-
+        // 3. Destruir sesión   
         session_unset();
         session_destroy();
         

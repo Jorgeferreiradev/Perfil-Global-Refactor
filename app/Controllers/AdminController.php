@@ -1,133 +1,168 @@
 <?php
 namespace App\Controllers;
 
+use App\Models\Usuario;
 use App\Services\ImportService;
 
+/**
+ * Controlador de Administración
+ * -----------------------------
+ * Maneja TODAS las operaciones exclusivas del rol ADMIN:
+ * - Gestión de usuarios
+ * - Carga masiva de datos
+ * - Redirecciones y vistas administrativas
+ */
 class AdminController {
 
-    // ... (métodos anteriores de carga masiva)
+    /**
+     * Dashboard Admin
+     * No tiene vista propia: redirige al dashboard unificado
+     */
+    public function index() {
+        header('Location: ' . BASE_URL . '/dashboard');
+        exit; // SIEMPRE cortar ejecución tras header
+    }
+
+    /* =====================================================
+     * =============== GESTIÓN DE USUARIOS =================
+     * ===================================================== */
 
     /**
-     * Muestra la lista de usuarios y el formulario de creación
+     * Lista y gestiona usuarios (excepto el admin logueado)
      */
     public function gestionarUsuarios() {
-        $title = "Gestión de Usuarios del Sistema";
-        $active = "usuarios";
-        
-        // Obtener todos los usuarios (menos el propio admin para no auto-borrarse)
-        $db = \Config\Database::getInstance();
-        $stmt = $db->prepare("SELECT * FROM usuarios_sistema WHERE deleted_at IS NULL AND id != :myId ORDER BY rol, apellidos");
-        $stmt->execute([':myId' => $_SESSION['user_id']]);
-        $usuarios = $stmt->fetchAll();
+        $usuarioModel = new Usuario();
 
-        require_once __DIR__ . '/../../views/layouts/header.php';
-        require_once __DIR__ . '/../../views/layouts/sidebar.php';
-        require_once __DIR__ . '/../../views/admin/usuarios.php';
-        require_once __DIR__ . '/../../views/layouts/footer.php';
+        // Obtener todos los usuarios menos el actual
+        $usuarios = $usuarioModel->getAllExcept($_SESSION['user_id']);
+
+        // Variables usadas por las vistas
+        $title  = 'Gestión de Usuarios';
+        $active = 'usuarios';
+
+        // Render del layout
+        require_once __DIR__ . '/../../resources/views/layouts/header.php';
+        require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
+        require_once __DIR__ . '/../../resources/views/admin/usuarios.php';
+        require_once __DIR__ . '/../../resources/views/layouts/footer.php';
     }
 
     /**
-     * Guarda un nuevo monitor, admin o dev
+     * Guarda un nuevo usuario (admin o monitor)
      */
     public function guardarUsuario() {
-        // Validar campos
-        if (empty($_POST['nombres']) || empty($_POST['correo']) || empty($_POST['password'])) {
-            header('Location: /dashboard/admin/usuarios?error=campos_vacios');
+
+        /* 1. VALIDACIÓN BÁSICA */
+        if (
+            empty($_POST['nombres']) ||
+            empty($_POST['correo']) ||
+            empty($_POST['password'])
+        ) {
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=campos_vacios');
             exit;
         }
 
-        $nombres = trim($_POST['nombres']);
-        $apellidos = trim($_POST['apellidos']);
-        $correo = trim($_POST['correo']);
-        $rol = $_POST['rol'];
-        // Hash seguro de contraseña
-        $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
+        $usuarioModel = new Usuario();
 
-        $db = \Config\Database::getInstance();
-
-        // Verificar duplicados
-        $check = $db->prepare("SELECT id FROM usuarios_sistema WHERE correo = :correo");
-        $check->execute([':correo' => $correo]);
-        if ($check->fetch()) {
-            header('Location: /dashboard/admin/usuarios?error=correo_duplicado');
+        /* 2. VALIDAR DUPLICADO POR CORREO */
+        if ($usuarioModel->exists($_POST['correo'])) {
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=correo_duplicado');
             exit;
         }
 
-        // Insertar
-        $sql = "INSERT INTO usuarios_sistema (nombres, apellidos, correo, password, rol) 
-                VALUES (:nom, :ape, :cor, :pass, :rol)";
-        $stmt = $db->prepare($sql);
-        
-        if ($stmt->execute([
-            ':nom' => $nombres, 
-            ':ape' => $apellidos, 
-            ':cor' => $correo, 
-            ':pass' => $password, 
-            ':rol' => $rol
-        ])) {
-            header('Location: /dashboard/admin/usuarios?success=creado');
+        /* 3. PREPARAR DATOS LIMPIOS */
+        $data = [
+            'nombres'   => trim($_POST['nombres']),
+            'apellidos' => trim($_POST['apellidos'] ?? ''),
+            'correo'    => trim($_POST['correo']),
+            'password'  => password_hash($_POST['password'], PASSWORD_BCRYPT),
+            'rol'       => $_POST['rol'] // admin | monitor
+        ];
+
+        /* 4. INSERTAR */
+        if ($usuarioModel->create($data)) {
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=creado');
         } else {
-            header('Location: /dashboard/admin/usuarios?error=db_error');
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=db_error');
         }
+        exit;
     }
 
     /**
-     * "Elimina" un usuario (Soft Delete)
+     * Eliminación lógica (soft delete) de usuario
      */
     public function eliminarUsuario($id) {
-        // Validación de seguridad básica
-        if (!is_numeric($id)) die("ID Inválido");
+        if (!is_numeric($id)) {
+            header('HTTP/1.1 400 Bad Request');
+            exit;
+        }
 
-        $db = \Config\Database::getInstance();
-        
-        // Soft Delete: No borramos el registro, solo marcamos deleted_at
-        // Esto mantiene la integridad referencial de los eventos que creó ese usuario.
-        $stmt = $db->prepare("UPDATE usuarios_sistema SET deleted_at = NOW() WHERE id = :id");
-        $stmt->execute([':id' => $id]);
+        $usuarioModel = new Usuario();
+        $usuarioModel->softDelete($id);
 
-        header('Location: /dashboard/admin/usuarios?success=eliminado');
+        header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=eliminado');
+        exit;
     }
 
+    /* =====================================================
+     * ================= CARGA MASIVA ======================
+     * ===================================================== */
 
+    /**
+     * Vista de carga masiva
+     */
     public function vistaCargaMasiva() {
-        $title = "Carga Masiva de Usuarios";
-        $active = "carga-masiva"; // Para resaltar en sidebar
-        
-        require_once __DIR__ . '/../../views/layouts/header.php';
-        require_once __DIR__ . '/../../views/layouts/sidebar.php';
-        require_once __DIR__ . '/../../views/admin/carga_masiva.php';
-        require_once __DIR__ . '/../../views/layouts/footer.php';
+        $title  = 'Carga Masiva de Base de Datos';
+        $active = 'carga-masiva';
+
+        require_once __DIR__ . '/../../resources/views/layouts/header.php';
+        require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
+        require_once __DIR__ . '/../../resources/views/admin/carga_masiva.php';
+        require_once __DIR__ . '/../../resources/views/layouts/footer.php';
     }
 
+    /**
+     * Procesa el archivo Excel/CSV
+     * - Limpia datos
+     * - Corrige caracteres
+     * - Evita duplicados
+     * - Inserta o actualiza
+     */
     public function procesarCarga() {
-        // 1. Validar que se subió un archivo
+
+        /* 1. VALIDAR SUBIDA */
         if (!isset($_FILES['archivo_excel']) || $_FILES['archivo_excel']['error'] !== UPLOAD_ERR_OK) {
-            header('Location: /dashboard/admin/carga-masiva?error=archivo_invalido');
+            header('Location: ' . BASE_URL . '/dashboard/admin/carga-masiva?error=subida_fallida');
             exit;
         }
 
-        $archivo = $_FILES['archivo_excel'];
-        $ext = pathinfo($archivo['name'], PATHINFO_EXTENSION);
-
-        // 2. Validar extensión
-        if (!in_array(strtolower($ext), ['xlsx', 'xls', 'csv'])) {
-            header('Location: /dashboard/admin/carga-masiva?error=formato_incorrecto');
+        /* 2. VALIDAR EXTENSIÓN */
+        $ext = strtolower(pathinfo($_FILES['archivo_excel']['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['xlsx', 'xls', 'csv'])) {
+            header('Location: ' . BASE_URL . '/dashboard/admin/carga-masiva?error=formato');
             exit;
         }
 
-        // 3. Procesar usando el Servicio
-        $importService = new ImportService();
-        $resultado = $importService->procesarArchivo($archivo['tmp_name']);
+        /* 3. PROCESAR ARCHIVO */
+        $servicio  = new ImportService();
+        $resultado = $servicio->procesarArchivo($_FILES['archivo_excel']['tmp_name']);
 
+        /* 4. ERROR FATAL */
         if (isset($resultado['error_fatal'])) {
-            // Guardar error en sesión para mostrarlo
-            $_SESSION['flash_error'] = $resultado['error_fatal'];
-            header('Location: /dashboard/admin/carga-masiva');
+            $_SESSION['error_carga'] = $resultado['error_fatal'];
+            header('Location: ' . BASE_URL . '/dashboard/admin/carga-masiva');
             exit;
         }
 
-        // 4. Éxito
-        $msg = "Proceso finalizado. Nuevos: {$resultado['nuevos']}, Actualizados: {$resultado['actualizados']}";
-        header('Location: /dashboard/admin/carga-masiva?success=' . urlencode($msg));
+        /* 5. ÉXITO */
+        $msg = sprintf(
+            'Proceso terminado. Nuevos: %d, Actualizados: %d, Omitidos: %d',
+            $resultado['nuevos'],
+            $resultado['actualizados'],
+            $resultado['omitidos'] ?? 0
+        );
+
+        header('Location: ' . BASE_URL . '/dashboard/admin/carga-masiva?success=' . urlencode($msg));
+        exit;
     }
 }

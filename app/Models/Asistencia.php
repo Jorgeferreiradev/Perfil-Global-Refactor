@@ -11,26 +11,52 @@ class Asistencia {
         $this->pdo = Database::getInstance();
     }
 
-    public function create($data) {
-        // Verificar Modo Sandbox (HU-D02)
-        $simulacion = isset($_SESSION['is_sandbox']) ? 1 : 0; 
-        // Nota: Si es registro público, tal vez no detecte la sesión del admin. 
-        // En un caso real, el "evento" ya tiene la marca de si es simulación o no.
-        // Lo ideal: Heredar el flag 'es_simulacion' del evento padre.
-
-        $sql = "INSERT INTO asistencias (id_evento, persona_id, ip_registro) VALUES (:evt, :per, :ip)";
+    // Registrar la asistencia
+    public function registrar($data) {
+        $sql = "INSERT INTO asistencias (id_evento, persona_id, id_periodo, ip_registro, es_simulacion) 
+                VALUES (:evt, :pers, :per, :ip, 0)";
+        
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([
-            ':evt' => $data['id_evento'],
-            ':per' => $data['persona_id'],
-            ':ip'  => $data['ip']
+        $stmt->execute([
+            ':evt'  => $data['id_evento'],
+            ':pers' => $data['persona_id'],
+            ':per'  => $data['id_periodo'],
+            ':ip'   => $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'
         ]);
+
+        return $this->pdo->lastInsertId();
     }
 
-    public function yaRegistro($idEvento, $idPersona) {
-        $sql = "SELECT id FROM asistencias WHERE id_evento = :evt AND persona_id = :per";
+    // Verificar si ya se registró hoy a este evento
+    public function yaRegistrado($idEvento, $idPersona) {
+        $sql = "SELECT id FROM asistencias WHERE id_evento = :evt AND persona_id = :pers LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([':evt' => $idEvento, ':per' => $idPersona]);
+        $stmt->execute([':evt' => $idEvento, ':pers' => $idPersona]);
         return $stmt->fetch();
     }
+
+    // Obtener lista de asistentes con sus datos personales y programa
+public function getByEvento($idEvento) {
+    // JOIN corregido: Asistencia -> Persona -> Historial -> Programa
+    $sql = "SELECT 
+                a.fecha_asistencia, 
+                p.numero_documento, 
+                p.nombres, 
+                p.apellidos, 
+                prog.nombre_programa,  
+                a.ip_registro
+            FROM asistencias a
+            INNER JOIN personas p ON a.persona_id = p.id
+            -- El truco: Unimos con el historial para saber el programa
+            LEFT JOIN historial_academico h ON p.id = h.persona_id
+            LEFT JOIN programas prog ON h.id_programa = prog.id_programa
+            WHERE a.id_evento = :evt
+            ORDER BY a.fecha_asistencia DESC";
+    
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute([':evt' => $idEvento]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
 }

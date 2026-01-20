@@ -1,54 +1,69 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-file-upload me-2"></i>Carga Masiva de Usuarios</h2>
+    <div>
+        <h2 class="fw-bold"><i class="fas fa-cloud-upload-alt me-2 text-primary"></i>Carga Masiva</h2>
+        <p class="text-muted">Actualiza la base de datos de estudiantes y docentes para el periodo actual.</p>
+    </div>
 </div>
 
 <?php if(isset($_GET['success'])): ?>
-    <div class="alert alert-success border-success">
+    <div class="alert alert-success border-0 border-start border-4 border-success shadow-sm">
         <h4 class="alert-heading"><i class="fas fa-check-circle me-2"></i>¡Carga Exitosa!</h4>
-        <p><?= htmlspecialchars($_GET['success']) ?></p>
+        <p class="mb-0"><?= htmlspecialchars($_GET['success']) ?></p>
     </div>
 <?php endif; ?>
 
-<?php if(isset($_SESSION['flash_error'])): ?>
-    <div class="alert alert-danger border-danger">
-        <h4 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i>Error Crítico</h4>
-        <p><?= $_SESSION['flash_error']; unset($_SESSION['flash_error']); ?></p>
+<?php if(isset($_GET['warning'])): 
+    $errores = json_decode(urldecode($_GET['warning']), true);
+?>
+    <div class="alert alert-warning border-0 border-start border-4 border-warning shadow-sm">
+        <h4 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Carga con Observaciones</h4>
+        <p>El proceso terminó, pero algunas filas fueron omitidas:</p>
+        <ul class="mb-0 small" style="max-height: 150px; overflow-y: auto;">
+            <?php foreach($errores as $err): ?>
+                <li><?= htmlspecialchars($err) ?></li>
+            <?php endforeach; ?>
+        </ul>
     </div>
 <?php endif; ?>
 
-<?php if(isset($_GET['error']) && $_GET['error'] == 'formato_incorrecto'): ?>
-    <div class="alert alert-warning">Por favor sube un archivo con extensión .xlsx, .xls o .csv</div>
+
+<?php if(isset($_SESSION['error_carga'])): ?>
+    <div class="alert alert-danger border-0 border-start border-4 border-danger shadow-sm">
+        <h4 class="alert-heading"><i class="fas fa-bomb me-2"></i>Error Crítico</h4>
+        <p class="mb-0"><?= $_SESSION['error_carga']; unset($_SESSION['error_carga']); ?></p>
+    </div>
 <?php endif; ?>
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card shadow">
-            <div class="card-header bg-dark text-white">
-                Subir Base de Datos Maestra
+<div class="row g-4">
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-dark text-white py-3">
+                <h6 class="mb-0"><i class="fas fa-file-import me-2"></i>Importar Archivo Maestro</h6>
             </div>
             <div class="card-body p-4">
-                <form action="/dashboard/admin/carga-masiva/procesar" method="POST" enctype="multipart/form-data">
+                <form action="<?= BASE_URL ?>/dashboard/admin/carga-masiva/procesar" method="POST" enctype="multipart/form-data">
                     
-                    <div class="mb-4">
-                        <label for="archivo" class="form-label fw-bold">Selecciona el archivo Excel (.xlsx)</label>
-                        <input class="form-control form-control-lg" type="file" id="archivo" name="archivo_excel" accept=".xlsx, .xls, .csv" required>
-                        <div class="form-text text-muted">
-                            Asegúrate de que el archivo siga estrictamente la plantilla institucional.
-                        </div>
+                    <div class="mb-4 text-center p-5 border-2 border-dashed rounded-3 bg-light">
+                        <i class="fas fa-file-excel fa-3x text-success mb-3"></i>
+                        <br>
+                        <label for="archivo" class="form-label fw-bold cursor-pointer">
+                            Arrastra tu archivo aquí o haz clic para buscar
+                        </label>
+                        <input class="form-control" type="file" id="archivo" name="archivo_excel" accept=".csv, .xlsx, .xls" required>
+                        <div class="form-text mt-2">Formatos aceptados: .xlsx, .csv (Máx 10MB)</div>
                     </div>
 
-                    <div class="alert alert-info d-flex align-items-center">
-                        <i class="fas fa-info-circle fa-2x me-3"></i>
+                    <div class="alert alert-warning d-flex align-items-start small">
+                        <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
                         <div>
-                            <strong>Nota Importante:</strong><br>
-                            Este proceso actualizará los datos de estudiantes existentes y creará los nuevos. 
-                            Asegúrate de haber cerrado el ciclo anterior antes de cargar el nuevo semestre.
+                            <strong>Advertencia:</strong> Este proceso puede tardar unos minutos dependiendo del tamaño del archivo. 
+                            No cierres la ventana hasta recibir la confirmación.
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2">
+                    <div class="d-grid">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-cloud-upload-alt me-2"></i>Procesar Archivo
+                            <i class="fas fa-upload me-2"></i>Iniciar Procesamiento
                         </button>
                     </div>
                 </form>
@@ -56,14 +71,24 @@
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card border-0 bg-light">
-            <div class="card-body">
-                <h5 class="card-title text-muted"><i class="fas fa-download me-2"></i>Recursos</h5>
-                <p class="card-text small">Descarga la plantilla oficial para evitar errores de formato en la carga.</p>
-                <a href="/downloads/Plantilla_Importar_ComunidadAcademica.xlsx" class="btn btn-outline-success w-100 mb-2">
-                    <i class="fas fa-file-excel me-2"></i>Descargar Plantilla
-                </a>
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm h-100 bg-primary bg-opacity-10">
+            <div class="card-body p-4">
+                <h5 class="text-primary fw-bold mb-3">Instrucciones</h5>
+                <ol class="list-group list-group-numbered list-group-flush bg-transparent">
+                    <li class="list-group-item bg-transparent">Descarga la plantilla oficial institucional.</li>
+                    <li class="list-group-item bg-transparent">No modifiques los nombres de las cabeceras.</li>
+                    <li class="list-group-item bg-transparent">El campo <strong>Documento</strong> es obligatorio.</li>
+                    <li class="list-group-item bg-transparent">Asegúrate de que el periodo académico esté abierto.</li>
+                </ol>
+                
+                <hr class="border-primary opacity-25">
+                
+                <div class="d-grid mt-4">
+                    <a href="<?= BASE_URL ?>/assets/templates/plantilla.xlsx" download="Plantilla_Oficial_FESC.xlsx" class="btn btn-outline-primary bg-green">
+                        <i class="fas fa-file-excel me-2"></i>Descargar Plantilla (.xlsx)
+                    </a>
+                </div>
             </div>
         </div>
     </div>

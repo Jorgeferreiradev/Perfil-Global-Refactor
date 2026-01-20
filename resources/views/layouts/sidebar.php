@@ -25,4 +25,4 @@
     <?php endif; ?>
 </nav>
 
-<main class="content">
+<main class="content d-flex flex-column">

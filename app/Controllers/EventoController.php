@@ -2,61 +2,105 @@
 namespace App\Controllers;
 
 use App\Models\Evento;
-use Chillerlan\QRCode\QRCode; // Librería instalada via Composer
+use App\Models\Periodo;
+use App\Models\Asistencia;
+use DateTime;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 
 class EventoController {
-    
-    public function index() {
-        $eventoModel = new Evento();
-        $eventos = $eventoModel->getAllByUser($_SESSION['user_id']);
-        
-        $title = "Gestión de Eventos";
-        $active = "eventos";
 
-        // Cargar vista de lista (table)
-        require_once __DIR__ . '/../../views/layouts/header.php';
-        require_once __DIR__ . '/../../views/layouts/sidebar.php';
-        require_once __DIR__ . '/../../views/events/index.php'; // Crea este archivo con la tabla HTML
-        require_once __DIR__ . '/../../views/layouts/footer.php';
+    public function index() {
+        $model = new Evento();
+        
+        // Recoger Filtros de la URL ($_GET)
+        $filtros = [
+            'linea'    => $_GET['linea'] ?? null,
+            'programa' => $_GET['programa'] ?? null,
+            'fecha'    => $_GET['fecha'] ?? null,
+            'busqueda' => $_GET['busqueda'] ?? null
+        ];
+
+        $eventos = $model->all($filtros);
+        
+        // Cargar listas para los selects de los filtros
+        $lineas = $model->getLineas();
+        $programas = $model->getProgramas();
+
+        $title = "Gestión de Eventos";
+        require_once __DIR__ . '/../../resources/views/layouts/header.php';
+        require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
+        require_once __DIR__ . '/../../resources/views/events/index.php';
+        require_once __DIR__ . '/../../resources/views/layouts/footer.php';
     }
 
     public function store() {
-        // 1. Recibir datos del formulario (POST)
-        // Validar que no vengan vacíos (Práctica Clean Code: Fail Fast)
-        if (empty($_POST['nombre_evento'])) {
-            die("Error: Nombre requerido");
+        // VALIDACIÓN DE SEGURIDAD (Fechas Pasadas)
+        $fechaInicio = $_POST['fecha_inicio'];
+        $horaInicio = $_POST['hora_inicio'];
+        
+        $fechaEvento = new DateTime("$fechaInicio $horaInicio");
+        $ahora = new DateTime(); // Toma la hora de America/Bogota por config.php
+
+        if ($fechaEvento < $ahora) {
+            header('Location: ' . BASE_URL . '/dashboard/eventos?error=fecha_pasada');
+            exit;
         }
 
-        // 2. Generar Token Único para el QR
-        // Usamos random_bytes para alta entropía criptográfica
-        $token = bin2hex(random_bytes(16)); 
-
         $data = [
-            'nombre'       => $_POST['nombre_evento'],
-            'token'        => $token,
-            'linea'        => $_POST['linea_accion'],
-            'fecha_inicio' => $_POST['fecha_inicio'],
-            'fecha_final'  => $_POST['fecha_final'],
-            'hora_inicio'  => $_POST['hora_inicio'],
-            'hora_final'   => $_POST['hora_final'],
-            'sede'         => $_POST['sede']
+            'nombre_evento'        => trim($_POST['nombre_evento']),
+            'id_linea_accion'      => $_POST['linea_accion'],
+            'programa_responsable' => $_POST['programa_responsable'],
+            'sede'                 => $_POST['sede'],
+            'fecha_inicio'         => $_POST['fecha_inicio'],
+            'hora_inicio'          => $_POST['hora_inicio'],
+            'fecha_final'          => $_POST['fecha_final'],
+            'hora_final'           => $_POST['hora_final'],
+            'id_periodo'           => (new Periodo())->getActivoId(),
+            'creado_por'           => $_SESSION['user_id']
         ];
 
-        // 3. Guardar en BD
         $model = new Evento();
-        $idEvento = $model->create($data);
-
-        // 4. Generar la imagen del QR (opcional guardarla en disco o generarla al vuelo)
-        // Aquí solo redirigimos, el QR se verá en la vista 'detalle'
-        header('Location: /dashboard/eventos?success=creado');
+        if ($model->create($data)) {
+            header('Location: ' . BASE_URL . '/dashboard/eventos?success=creado');
+        } else {
+            header('Location: ' . BASE_URL . '/dashboard/eventos?error=db');
+        }
+        exit;
     }
 
-    // Método para mostrar el QR en pantalla
+    // Método para VER ASISTENTES (Solución Punto 2)
+    public function verAsistentes($id) {
+        $eventoModel = new Evento();
+        $evento = $eventoModel->getById($id);
+
+        if(!$evento) die("Evento no existe");
+
+        $asistenciaModel = new Asistencia();
+        $asistentes = $asistenciaModel->getByEvento($id);
+
+        $title = "Asistentes - " . $evento['nombre_evento'];
+        require_once __DIR__ . '/../../resources/views/layouts/header.php';
+        require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
+        require_once __DIR__ . '/../../resources/views/events/asistentes.php';
+        require_once __DIR__ . '/../../resources/views/layouts/footer.php';
+    }
+
     public function mostrarQR($token) {
-        // La URL que el estudiante escaneará
-        $urlAsistencia = "https://tudominio.edu.co/asistencia/" . $token;
+        $model = new Evento();
+        $evento = $model->getByToken($token);
+        if (!$evento) die("Token inválido");
+
+        $urlAsistencia = BASE_URL . "/asistencia/" . $token;
         
-        // Renderizar QR
-        echo '<img src="'.(new QRCode)->render($urlAsistencia).'" alt="QR Code" />';
+        $options = new QROptions([
+            'version' => 5,
+            'outputType' => QRCode::OUTPUT_MARKUP_SVG,
+            'eccLevel' => QRCode::ECC_L,
+        ]);
+        $qrImage = (new QRCode($options))->render($urlAsistencia);
+        $title = "QR - " . $evento['nombre_evento'];
+        
+        require_once __DIR__ . '/../../resources/views/events/qr_view.php';
     }
 }

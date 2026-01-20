@@ -9,10 +9,6 @@ class RoleMiddleware {
         // Asumimos que el rol se guarda en sesión al loguear
         $userRole = $_SESSION['user_rol'] ?? '';
 
-        // Si es DEV, tiene acceso a todo (Sandbox)
-        if ($userRole === 'dev') {
-            return; 
-        }
 
         if ($userRole !== $requiredRole) {
             // Acceso prohibido
