@@ -1,17 +1,21 @@
 <?php
 // config/config.php
 
-// 1. ZONA HORARIA (Resuelve problema de estados grises)
+// 1. ZONA HORARIA
 date_default_timezone_set('America/Bogota'); 
 
-// 2. BASE URL DINÁMICA (Resuelve problema del celular)
-// Detecta automáticamente si estás en localhost o usando la IP
+// 2. BASE URL (CONFIGURACIÓN NGROK)
+// ---------------------------------------------------------
+// COMENTAMOS ESTO TEMPORALMENTE PARA LA PRUEBA MÓVIL:
+/*
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
-$host = $_SERVER['HTTP_HOST']; // Esto tomará la IP (ej: 192.168.1.50) si entras por IP
+$host = $_SERVER['HTTP_HOST']; 
 define('BASE_URL', $protocol . "://" . $host . "/perfilglobal_v2/public");
+*/
+
+// PONEMOS LA URL DE NGROK FIJA:
+define('BASE_URL', 'https://dimensionally-schedular-elli.ngrok-free.dev/perfilglobal_v2/public');
+// ---------------------------------------------------------
 
 // Credenciales BD...
 // ...
-
-
-

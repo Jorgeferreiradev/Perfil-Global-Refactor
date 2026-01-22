@@ -1,2 +1,15 @@
 *.perfilglobal.sql
 
+# Carpeta de documentación personal y notas
+docs/
+temp/
+
+# Ejecutables de herramientas locales
+ngrok.exe
+
+# Notas específicas de desarrollo
+dev_notes.md
+
+# Archivos de configuración local que no deben ser públicos
+.env
+config/config_local.php

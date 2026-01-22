@@ -52,7 +52,7 @@
         <!-- LOGO (independiente, NO dentro de otro card) -->
         <div class="mb-2">
             <img
-                src="<?= BASE_URL ?>/assets/img/LOGO_FESC.png"
+                src="<?= BASE_URL ?>/assets/img/logo_fesc.png"
                 alt="Logo FESC"
                 class="logo-img"
             >
