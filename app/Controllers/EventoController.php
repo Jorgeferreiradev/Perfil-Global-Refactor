@@ -10,10 +10,12 @@ use chillerlan\QRCode\QROptions;
 
 class EventoController {
 
+    /* =======================
+       LISTAR EVENTOS
+    ======================= */
     public function index() {
         $model = new Evento();
-        
-        // Recoger Filtros de la URL ($_GET)
+
         $filtros = [
             'linea'    => $_GET['linea'] ?? null,
             'programa' => $_GET['programa'] ?? null,
@@ -21,10 +23,8 @@ class EventoController {
             'busqueda' => $_GET['busqueda'] ?? null
         ];
 
-        $eventos = $model->all($filtros);
-        
-        // Cargar listas para los selects de los filtros
-        $lineas = $model->getLineas();
+        $eventos   = $model->all($filtros);
+        $lineas    = $model->getLineas();
         $programas = $model->getProgramas();
 
         $title = "Gestión de Eventos";
@@ -34,13 +34,13 @@ class EventoController {
         require_once __DIR__ . '/../../resources/views/layouts/footer.php';
     }
 
+    /* =======================
+       CREAR EVENTO
+    ======================= */
     public function store() {
-        // VALIDACIÓN DE SEGURIDAD (Fechas Pasadas)
-        $fechaInicio = $_POST['fecha_inicio'];
-        $horaInicio = $_POST['hora_inicio'];
-        
-        $fechaEvento = new DateTime("$fechaInicio $horaInicio");
-        $ahora = new DateTime(); // Toma la hora de America/Bogota por config.php
+        // Validación de fecha pasada
+        $fechaEvento = new DateTime($_POST['fecha_inicio'].' '.$_POST['hora_inicio']);
+        $ahora = new DateTime();
 
         if ($fechaEvento < $ahora) {
             header('Location: ' . BASE_URL . '/dashboard/eventos?error=fecha_pasada');
@@ -61,23 +61,84 @@ class EventoController {
         ];
 
         $model = new Evento();
-        if ($model->create($data)) {
-            header('Location: ' . BASE_URL . '/dashboard/eventos?success=creado');
+        $model->create($data);
+
+        header('Location: ' . BASE_URL . '/dashboard/eventos?success=creado');
+        exit;
+    }
+
+    /* =======================
+       EDITAR EVENTO
+    ======================= */
+public function update($id) {
+
+    // 1. Obtener evento actual
+    $model = new Evento();
+    $eventoActual = $model->getById($id);
+
+    if (!$eventoActual) {
+        header('Location: ' . BASE_URL . '/dashboard/eventos?error=no_existe');
+        exit;
+    }
+
+    // 2. Validar SOLO si cambió la fecha/hora
+    $fechaNueva = new DateTime($_POST['fecha_inicio'] . ' ' . $_POST['hora_inicio']);
+    $fechaActual = new DateTime($eventoActual['fecha_inicio'] . ' ' . $eventoActual['hora_inicio']);
+    $ahora = new DateTime();
+
+    if ($fechaNueva != $fechaActual && $fechaNueva < $ahora) {
+        header('Location: ' . BASE_URL . '/dashboard/eventos?error=fecha_pasada');
+        exit;
+    }
+
+    // 3. Preparar datos
+    $data = [
+        'nombre_evento'        => trim($_POST['nombre_evento']),
+        'id_linea_accion'      => $_POST['linea_accion'],
+        'programa_responsable' => $_POST['programa_responsable'],
+        'sede'                 => $_POST['sede'],
+        'fecha_inicio'         => $_POST['fecha_inicio'],
+        'hora_inicio'          => $_POST['hora_inicio'],
+        'fecha_final'          => $_POST['fecha_final'],
+        'hora_final'           => $_POST['hora_final']
+    ];
+
+    // 4. Guardar
+    if ($model->update($id, $data)) {
+        header('Location: ' . BASE_URL . '/dashboard/eventos?success=actualizado');
+    } else {
+        header('Location: ' . BASE_URL . '/dashboard/eventos?error=update');
+    }
+    exit;
+}
+
+
+    /* =======================
+       ELIMINAR EVENTO (SOFT)
+    ======================= */
+    public function eliminar($id) {
+        $model = new Evento();
+
+        if ($model->delete($id)) {
+            header('Location: ' . BASE_URL . '/dashboard/eventos?success=eliminado');
         } else {
             header('Location: ' . BASE_URL . '/dashboard/eventos?error=db');
         }
         exit;
     }
 
-    // Método para VER ASISTENTES (Solución Punto 2)
+    /* =======================
+       VER ASISTENTES
+    ======================= */
     public function verAsistentes($id) {
         $eventoModel = new Evento();
         $evento = $eventoModel->getById($id);
 
-        if(!$evento) die("Evento no existe");
+        if (!$evento) {
+            die("Evento no existe");
+        }
 
-        $asistenciaModel = new Asistencia();
-        $asistentes = $asistenciaModel->getByEvento($id);
+        $asistentes = (new Asistencia())->getByEvento($id);
 
         $title = "Asistentes - " . $evento['nombre_evento'];
         require_once __DIR__ . '/../../resources/views/layouts/header.php';
@@ -86,21 +147,22 @@ class EventoController {
         require_once __DIR__ . '/../../resources/views/layouts/footer.php';
     }
 
+    /* =======================
+       MOSTRAR QR
+    ======================= */
     public function mostrarQR($token) {
-        $model = new Evento();
-        $evento = $model->getByToken($token);
+        $evento = (new Evento())->getByToken($token);
         if (!$evento) die("Token inválido");
 
         $urlAsistencia = BASE_URL . "/asistencia/" . $token;
-        
+
         $options = new QROptions([
-            'version' => 5,
             'outputType' => QRCode::OUTPUT_MARKUP_SVG,
-            'eccLevel' => QRCode::ECC_L,
+            'eccLevel'   => QRCode::ECC_L,
         ]);
+
         $qrImage = (new QRCode($options))->render($urlAsistencia);
-        $title = "QR - " . $evento['nombre_evento'];
-        
+
         require_once __DIR__ . '/../../resources/views/events/qr_view.php';
     }
 }

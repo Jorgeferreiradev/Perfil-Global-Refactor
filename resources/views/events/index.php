@@ -97,14 +97,121 @@
                         </td>
                         <td><?= $badge ?></td>
                         <td class="text-end">
-                            <a href="<?= BASE_URL ?>/dashboard/eventos/qr/<?= $evt['token_qr'] ?>" target="_blank" class="btn btn-sm btn-outline-dark" title="Ver QR">
+                            <a href="<?= BASE_URL ?>/dashboard/eventos/qr/<?= $evt['token_qr'] ?>" 
+                            target="_blank" 
+                            class="btn btn-sm btn-outline-dark" 
+                            title="Ver QR">
                                 <i class="fas fa-qrcode"></i>
                             </a>
-                            <a href="<?= BASE_URL ?>/dashboard/eventos/asistentes/<?= $evt['id_evento'] ?>" class="btn btn-sm btn-info text-white" title="Asistentes">
+
+                            <a href="<?= BASE_URL ?>/dashboard/eventos/asistentes/<?= $evt['id_evento'] ?>" 
+                            class="btn btn-sm btn-info text-white" 
+                            title="Asistentes">
                                 <i class="fas fa-users"></i>
                             </a>
+
+                            <!-- EDITAR -->
+                            <button type="button" 
+                                    class="btn btn-sm btn-warning"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEditar<?= $evt['id_evento'] ?>"
+                                    title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+
+                            <!-- ELIMINAR -->
+                            <a href="<?= BASE_URL ?>/dashboard/eventos/eliminar/<?= $evt['id_evento'] ?>" 
+                            class="btn btn-sm btn-danger"
+                            title="Eliminar"
+                            onclick="return confirm('¿Estás seguro de eliminar este evento?');">
+                                <i class="fas fa-trash"></i>
+                            </a>
                         </td>
+
                     </tr>
+
+                    <div class="modal fade" id="modalEditar<?= $evt['id_evento'] ?>" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <form action="<?= BASE_URL ?>/dashboard/eventos/editar/<?= $evt['id_evento'] ?>" method="POST">
+                                    
+                                    <div class="modal-header bg-warning">
+                                        <h5 class="modal-title fw-bold">Editar Evento</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+
+                                    <div class="modal-body text-start">
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Nombre del Evento</label>
+                                            <input type="text"
+                                                name="nombre_evento"
+                                                class="form-control"
+                                                value="<?= htmlspecialchars($evt['nombre_evento']) ?>"
+                                                required>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <label class="form-label">Fecha Inicio</label>
+                                                <input type="date"
+                                                    name="fecha_inicio"
+                                                    class="form-control"
+                                                    value="<?= $evt['fecha_inicio'] ?>"
+                                                    required>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label">Hora Inicio</label>
+                                                <input type="time"
+                                                    name="hora_inicio"
+                                                    class="form-control"
+                                                    value="<?= $evt['hora_inicio'] ?>"
+                                                    required>
+                                            </div>
+                                        </div>
+
+                                        <div class="row mt-2">
+                                            <div class="col-6">
+                                                <label class="form-label">Fecha Final</label>
+                                                <input type="date"
+                                                    name="fecha_final"
+                                                    class="form-control"
+                                                    value="<?= $evt['fecha_final'] ?>"
+                                                    required>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label">Hora Final</label>
+                                                <input type="time"
+                                                    name="hora_final"
+                                                    class="form-control"
+                                                    value="<?= $evt['hora_final'] ?>"
+                                                    required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Campos ocultos que el controlador espera -->
+                                        <input type="hidden" name="linea_accion" value="<?= $evt['id_linea_accion'] ?>">
+                                        <input type="hidden" name="programa_responsable" value="<?= $evt['programa_responsable'] ?>">
+                                        <input type="hidden" name="sede" value="<?= $evt['sede'] ?>">
+
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                            Cancelar
+                                        </button>
+                                        <button type="submit" class="btn btn-warning fw-bold">
+                                            Actualizar
+                                        </button>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+
+
                     <?php endforeach; ?>
                 </tbody>
             </table>
