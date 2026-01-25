@@ -47,7 +47,7 @@
             </div>
 
             <?php if (isset($_GET['success'])): ?>
-                <div class="alert alert-success text-center auto-dismiss">
+                <div class="alert alert-success text-center">
                     <h1 class="display-4">✅</h1>
                     <strong>¡Asistencia confirmada!</strong><br>
                     <?= htmlspecialchars($_GET['nombre']) ?><br>

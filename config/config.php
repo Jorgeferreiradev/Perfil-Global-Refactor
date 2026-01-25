@@ -14,7 +14,7 @@ define('BASE_URL', $protocol . "://" . $host . "/perfilglobal_v2/public");
 */
 
 // PONEMOS LA URL DE NGROK FIJA:
-define('BASE_URL', 'https://dimensionally-schedular-elli.ngrok-free.dev/perfilglobal_v2/public');
+define('BASE_URL', ' https://dimensionally-schedular-elli.ngrok-free.dev/perfilglobal_v2/public');
 // ---------------------------------------------------------
 
 // Credenciales BD...

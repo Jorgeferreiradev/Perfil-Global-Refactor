@@ -30,9 +30,7 @@ $middleware  = 'App\Middleware';
 // A. RUTAS PÚBLICAS (SIN LOGIN - ACCESO LIBRE)
 // =======================================================
 
-// -------------------------------------------------------
 // 1. Autenticación
-// -------------------------------------------------------
 $router->get('/', "$controllers\AuthController@showLogin");
 $router->get('/login', "$controllers\AuthController@showLogin");
 $router->post('/auth/login', "$controllers\AuthController@login");
@@ -41,18 +39,13 @@ $router->get('/logout', "$controllers\AuthController@logout");
 $router->get('/auth/forgot-password', "$controllers\AuthController@showForgotPassword");
 $router->post('/auth/recovery', "$controllers\AuthController@sendRecoveryLink");
 
-// -------------------------------------------------------
-// 2. Asistencia Pública (QR y Registro Manual)
-// ¡EL ORDEN AQUÍ ES CRÍTICO! Las específicas van primero.
-// -------------------------------------------------------
-
-// A. Rutas Específicas (Registro Manual y Procesos POST)
+// 2. Asistencia Pública
+// A. Rutas Específicas
 $router->get('/asistencia/nuevo/{token}/{documento}', "$controllers\AsistenciaController@vistaRegistroManual");
 $router->post('/asistencia/guardar-manual', "$controllers\AsistenciaController@guardarManual");
 $router->post('/asistencia/registrar', "$controllers\AsistenciaController@registrar");
 
-// B. Ruta Genérica (El comodín del Token)
-// Esta debe ir AL FINAL de este bloque. Si va primero, se "come" a las demás.
+// B. Ruta Genérica (Token)
 $router->get('/asistencia/{token}', "$controllers\AsistenciaController@vistaRegistro");
 
 
@@ -64,29 +57,32 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
     // Middleware de sesión (obligatorio para todo lo de abajo)
     $router->before('GET|POST', '/.*', "$middleware\SessionMiddleware@handle");
 
-    // Dashboard principal
+    // Dashboard principal (Admin y Monitor)
     $router->get('/', "$controllers\DashboardController@index");
 
     // ---------------------------------------------------
-    // 1. MÓDULO DE EVENTOS (Gestión Interna)
+    // 1. MÓDULO DE EVENTOS (Acceso Mixto)
     // ---------------------------------------------------
     $router->mount('/eventos', function () use ($router, $controllers) {
-        
-        // Listar y Crear
-        $router->get('/', "$controllers\EventoController@index");              // Ver lista
-        $router->post('/crear', "$controllers\EventoController@store");        // Guardar nuevo
-        
-        // Ver QR y Lista de Asistentes (Vista del Monitor/Admin)
+        $router->get('/', "$controllers\EventoController@index");          // Ver lista
+        $router->post('/crear', "$controllers\EventoController@store");    // Guardar nuevo
         $router->get('/qr/{token}', "$controllers\EventoController@mostrarQR");
         $router->get('/asistentes/{id}', "$controllers\EventoController@verAsistentes");
-
-        // Editar y Eliminar (CRUD Completo)
         $router->post('/editar/{id}', "$controllers\EventoController@update");
         $router->get('/eliminar/{id}', "$controllers\EventoController@eliminar");
     });
 
     // ---------------------------------------------------
-    // 2. ZONA ADMIN (SOLO ROL 'admin')
+    // 2. MÓDULO DE REPORTES (Acceso Mixto - ¡CORREGIDO!)
+    // ---------------------------------------------------
+    $router->mount('/reportes', function () use ($router, $controllers) {
+        $router->get('/', "$controllers\ReporteController@index");
+        // Asegúrate que el método en el controlador se llame 'generarReporte'
+        $router->post('/descargar', "$controllers\ReporteController@generarReporte");
+    });
+
+    // ---------------------------------------------------
+    // 3. ZONA ADMIN (SOLO ROL 'admin')
     // ---------------------------------------------------
     $router->mount('/admin', function () use ($router, $controllers) {
 
@@ -95,37 +91,24 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
             (new \App\Middleware\RoleMiddleware())->handle('admin');
         });
 
-        // Home admin
+        // Home admin (opcional, redirige al dashboard general)
         $router->get('/', "$controllers\AdminController@index");
 
-        // Gestión de Usuarios del Sistema
+        // Gestión de Usuarios
         $router->get('/usuarios', "$controllers\AdminController@gestionarUsuarios");
         $router->post('/usuarios/guardar', "$controllers\AdminController@guardarUsuario");
         $router->get('/usuarios/eliminar/{id}', "$controllers\AdminController@eliminarUsuario");
 
-        // Aprobaciones Pendientes (Lo que vamos a hacer luego)
+        // Aprobaciones Pendientes
         $router->get('/pendientes', "$controllers\AdminController@listaPendientes");
         $router->get('/aprobar/{id}', "$controllers\AdminController@aprobarUsuario");
+        $router->get('/rechazar/{id}', "$controllers\AdminController@rechazarUsuario");
 
         // Carga masiva
         $router->get('/carga-masiva', "$controllers\AdminController@vistaCargaMasiva");
         $router->post('/carga-masiva/procesar', "$controllers\AdminController@procesarCarga");
-
-        // Reportes
-        $router->mount('/reportes', function () use ($router, $controllers) {
-            $router->get('/', "$controllers\ReporteController@index");
-            $router->post('/descargar', "$controllers\ReporteController@descargarMatriz");
-        });
-    });
-
-    // ---------------------------------------------------
-    // 3. ZONA MONITOR (OPCIONAL)
-    // ---------------------------------------------------
-    $router->mount('/monitor', function () use ($router, $controllers) {
-        $router->get('/', "$controllers\MonitorController@index");
     });
 });
-
 
 // =======================================================
 // ERROR 404

@@ -9,26 +9,36 @@
         <i class="fas fa-qrcode me-3" style="width:20px"></i> Eventos & QR
     </a>
 
-    <?php if($_SESSION['user_rol'] === 'admin'): ?>
-        <hr class="my-3 mx-3 border-secondary">
+    <a href="<?= BASE_URL ?>/dashboard/reportes" class="<?= ($active == 'reportes') ? 'active' : '' ?>">
+        <i class="fas fa-file-csv me-3" style="width:20px"></i> Reportes
+    </a>
+
+    <?php if ($_SESSION['user_rol'] === 'admin'): ?>
+        <hr class="my-3 mx-3 border-secondary opacity-25">
         <div class="py-2 px-3 text-uppercase small fw-bold text-danger">Administración</div>
         
         <a href="<?= BASE_URL ?>/dashboard/admin/usuarios" class="<?= ($active == 'usuarios') ? 'active' : '' ?>">
             <i class="fas fa-users-cog me-3" style="width:20px"></i> Usuarios
         </a>
 
-        <!-- 🔥 NUEVO: APROBACIONES -->
-        <a href="<?= BASE_URL ?>/dashboard/admin/pendientes" class="<?= ($active == 'pendientes') ? 'active' : '' ?>">
-            <i class="fas fa-user-check me-3" style="width:20px"></i> Aprobaciones
+        <a href="<?= BASE_URL ?>/dashboard/admin/pendientes" 
+            class="<?= ($active == 'pendientes') ? 'active fw-bold text-primary' : '' ?>">
+            <div class="d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="fas fa-user-clock me-3" style="width:20px"></i> Aprobaciones
+                </span>
+                <?php if (!empty($_SESSION['pendientes_count'])): ?>
+                    <span class="badge rounded-pill bg-danger">
+                        <?= $_SESSION['pendientes_count'] ?>
+                    </span>
+                <?php endif; ?>
+            </div>
         </a>
 
         <a href="<?= BASE_URL ?>/dashboard/admin/carga-masiva" class="<?= ($active == 'carga-masiva') ? 'active' : '' ?>">
             <i class="fas fa-cloud-upload-alt me-3" style="width:20px"></i> Carga Masiva
         </a>
-
-        <a href="<?= BASE_URL ?>/dashboard/admin/reportes" class="<?= ($active == 'reportes') ? 'active' : '' ?>">
-            <i class="fas fa-chart-line me-3" style="width:20px"></i> Reportes
-        </a>
+        
     <?php endif; ?>
 </nav>
 

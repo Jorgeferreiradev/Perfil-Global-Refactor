@@ -2,25 +2,91 @@
 namespace App\Controllers;
 
 use App\Models\Usuario;
-use App\Services\ImportService;
+use App\Models\Persona;      // Modelo para Aprobaciones
+use App\Services\ImportService; // Servicio para Excel
 
 /**
  * Controlador de Administración
  * -----------------------------
  * Maneja TODAS las operaciones exclusivas del rol ADMIN:
- * - Gestión de usuarios
+ * - Aprobación de registros (Pendientes)
+ * - Gestión de usuarios del sistema
  * - Carga masiva de datos
- * - Redirecciones y vistas administrativas
  */
 class AdminController {
 
     /**
-     * Dashboard Admin
-     * No tiene vista propia: redirige al dashboard unificado
+     * 1. DASHBOARD ADMIN (HOME)
+     * Calculamos los pendientes aquí para que el globo rojo 
+     * aparezca apenas el admin entra.
      */
     public function index() {
-        header('Location: ' . BASE_URL . '/dashboard');
-        exit; // SIEMPRE cortar ejecución tras header
+        // Inicializar modelo
+        $personaModel = new Persona();
+        
+        // Calcular pendientes para el sidebar
+        $_SESSION['pendientes_count'] = $personaModel->contarPendientes();
+
+        $title = "Panel Administrativo";
+        $active = "dashboard";
+
+        // Cargar vistas
+        require_once __DIR__ . '/../../resources/views/layouts/header.php';
+        require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
+        // Si no tienes admin/index.php, puedes redirigir o crear una vista básica
+        if (file_exists(__DIR__ . '/../../resources/views/admin/index.php')) {
+            require_once __DIR__ . '/../../resources/views/admin/index.php';
+        } else {
+            echo "<div class='p-5'><h1>Bienvenido al Panel Admin</h1></div>";
+        }
+        require_once __DIR__ . '/../../resources/views/layouts/footer.php';
+    }
+
+    /* =====================================================
+     * ============= MÓDULO DE APROBACIONES ================
+     * ===================================================== */
+
+    // VISTA DE LA TABLA PENDIENTES
+    public function listaPendientes() {
+        $model = new Persona();
+        $pendientes = $model->getPendientes();
+        
+        // Actualizamos contador de sesión
+        $_SESSION['pendientes_count'] = count($pendientes);
+
+        $title  = "Aprobaciones Pendientes";
+        $active = "pendientes"; // Para resaltar sidebar
+
+        require_once __DIR__ . '/../../resources/views/layouts/header.php';
+        require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
+        require_once __DIR__ . '/../../resources/views/admin/pendientes.php';
+        require_once __DIR__ . '/../../resources/views/layouts/footer.php';
+    }
+
+    // ACCIÓN APROBAR
+    public function aprobarUsuario($id) {
+        $model = new Persona();
+        if ($model->aprobar($id)) {
+            // Recalcular contador y actualizar sesión
+            $_SESSION['pendientes_count'] = $model->contarPendientes();
+            header('Location: ' . BASE_URL . '/dashboard/admin/pendientes?msg=aprobado');
+        } else {
+            header('Location: ' . BASE_URL . '/dashboard/admin/pendientes?error=db');
+        }
+        exit;
+    }
+
+    // ACCIÓN RECHAZAR
+    public function rechazarUsuario($id) {
+        $model = new Persona();
+        if ($model->rechazar($id)) {
+            // Recalcular contador y actualizar sesión
+            $_SESSION['pendientes_count'] = $model->contarPendientes();
+            header('Location: ' . BASE_URL . '/dashboard/admin/pendientes?msg=rechazado');
+        } else {
+            header('Location: ' . BASE_URL . '/dashboard/admin/pendientes?error=db');
+        }
+        exit;
     }
 
     /* =====================================================
@@ -36,11 +102,9 @@ class AdminController {
         // Obtener todos los usuarios menos el actual
         $usuarios = $usuarioModel->getAllExcept($_SESSION['user_id']);
 
-        // Variables usadas por las vistas
         $title  = 'Gestión de Usuarios';
         $active = 'usuarios';
 
-        // Render del layout
         require_once __DIR__ . '/../../resources/views/layouts/header.php';
         require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
         require_once __DIR__ . '/../../resources/views/admin/usuarios.php';
@@ -51,13 +115,8 @@ class AdminController {
      * Guarda un nuevo usuario (admin o monitor)
      */
     public function guardarUsuario() {
-
         /* 1. VALIDACIÓN BÁSICA */
-        if (
-            empty($_POST['nombres']) ||
-            empty($_POST['correo']) ||
-            empty($_POST['password'])
-        ) {
+        if (empty($_POST['nombres']) || empty($_POST['correo']) || empty($_POST['password'])) {
             header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=campos_vacios');
             exit;
         }
@@ -123,10 +182,6 @@ class AdminController {
 
     /**
      * Procesa el archivo Excel/CSV
-     * - Limpia datos
-     * - Corrige caracteres
-     * - Evita duplicados
-     * - Inserta o actualiza
      */
     public function procesarCarga() {
 

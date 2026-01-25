@@ -20,7 +20,7 @@ class AuthController {
     $password = $_POST['password'] ?? '';
 
     $usuarioModel = new Usuario();
-    $user = $usuarioModel->findByEmail($email);
+    $user = $usuarioModel->getByCorreo($email);
 
     if ($user && password_verify($password, $user['password'])) {
         // 1. Guardar sesión básica
