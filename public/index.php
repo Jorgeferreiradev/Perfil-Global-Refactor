@@ -75,11 +75,11 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
     // ---------------------------------------------------
     // 2. MÓDULO DE REPORTES (Acceso Mixto - ¡CORREGIDO!)
     // ---------------------------------------------------
-    $router->mount('/reportes', function () use ($router, $controllers) {
-        $router->get('/', "$controllers\ReporteController@index");
-        // Asegúrate que el método en el controlador se llame 'generarReporte'
-        $router->post('/descargar', "$controllers\ReporteController@generarReporte");
-    });
+    // [CAMBIO] Usamos rutas directas en vez de 'mount' para evitar
+    // problemas con la barra inclinada (/) al final de la URL.
+    $router->get('/reportes', "$controllers\ReporteController@index");
+    $router->post('/reportes/descargar-matriz', "$controllers\ReporteController@descargarMatriz");
+    $router->post('/reportes/descargar-individual', "$controllers\ReporteController@descargarIndividual");
 
     // ---------------------------------------------------
     // 3. ZONA ADMIN (SOLO ROL 'admin')
@@ -91,7 +91,7 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
             (new \App\Middleware\RoleMiddleware())->handle('admin');
         });
 
-        // Home admin (opcional, redirige al dashboard general)
+        // Home admin (opcional)
         $router->get('/', "$controllers\AdminController@index");
 
         // Gestión de Usuarios
