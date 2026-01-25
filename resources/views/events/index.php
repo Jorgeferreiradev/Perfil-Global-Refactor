@@ -110,22 +110,56 @@
                                 <i class="fas fa-users"></i>
                             </a>
 
-                            <!-- EDITAR -->
-                            <button type="button" 
-                                    class="btn btn-sm btn-warning"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalEditar<?= $evt['id_evento'] ?>"
-                                    title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
+                            <td class="text-end">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border dropdown-toggle"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false"
+                                            title="Acciones">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
 
-                            <!-- ELIMINAR -->
-                            <a href="<?= BASE_URL ?>/dashboard/eventos/eliminar/<?= $evt['id_evento'] ?>" 
-                            class="btn btn-sm btn-danger"
-                            title="Eliminar"
-                            onclick="return confirm('¿Estás seguro de eliminar este evento?');">
-                                <i class="fas fa-trash"></i>
-                            </a>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+
+
+                                        <!-- FUTURO -->
+                                        <li><hr class="dropdown-divider"></li>
+
+                                        <li>
+                                            <button class="dropdown-item disabled">
+                                                <i class="fas fa-file-excel me-2 text-success"></i> Exportar (próximamente)
+                                            </button>
+                                        </li>
+
+                                        <li>
+                                            <button class="dropdown-item"
+                                                    onclick="copiarLink('<?= BASE_URL ?>/dashboard/eventos/asistentes/<?= $evt['id_evento'] ?>')">
+                                                <i class="fas fa-link me-2"></i> Copiar enlace
+                                            </button>
+                                        </li>
+
+                                                                                <!-- Editar -->
+                                        <li>
+                                            <button class="dropdown-item"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalEditar<?= $evt['id_evento'] ?>">
+                                                <i class="fas fa-edit me-2 text-warning"></i> Editar
+                                            </button>
+                                        </li>
+
+                                        <!-- Eliminar (soft delete) -->
+                                        <li>
+                                            <button class="dropdown-item text-danger"
+                                                    onclick="confirmarDesactivacion(<?= $evt['id_evento'] ?>)">
+                                                <i class="fas fa-ban me-2"></i>Desactivar evento
+                                            </button>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            </td>
+
                         </td>
 
                     </tr>

@@ -2,114 +2,141 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-
-    <!-- Viewport separado correctamente -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title><?= $title ?></title>
-
-    <!-- Bootstrap -->
+    <title><?= $title ?? 'Registro Asistencia' ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Estilos de la vista -->
+    
     <style>
-        body {
-            background-color: #eef2f5;
+        body { 
+            background-color: #eef2f5; 
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
         }
-
         .mobile-card {
+            width: 100%;
             max-width: 400px;
-            margin: 20px auto;
             border-radius: 35px;
             border: none;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: white;
         }
-
-        .logo-img {
-            height: 50px;
-            margin-bottom: 20px;
+        .logo-img { height: 50px; margin-bottom: 20px; }
+        
+        /* CLASE PARA LA MAGIA DE DESAPARECER */
+        .fade-out {
+            opacity: 0;
+            transition: opacity 1s ease-out;
         }
     </style>
 </head>
-
 <body>
-
-    <div class="container">
-
-        <!-- Card principal -->
+    <div class="container d-flex justify-content-center">
         <div class="card mobile-card p-4">
-
-            <!-- Logo -->
+            
             <div class="text-center mb-4">
-                <img
-                    src="<?= BASE_URL ?>/assets/img/LOGO_FESC.png"
-                    alt="LOGO_FESC"
-                    class="logo-img"
-                >
+                <img src="<?= BASE_URL ?>/assets/img/LOGO_FESC.png" alt="FESC" class="logo-img">
             </div>
 
-            <!-- Encabezado -->
             <div class="text-center">
-                <h4 class="fw-bold text-primary mb-1">
-                    Registro de Asistencia
-                </h4>
+                <h4 class="fw-bold text-primary mb-1">Registro de Asistencia</h4>
                 <p class="text-muted small mb-4">
                     <?= htmlspecialchars($evento['nombre_evento']) ?>
                 </p>
             </div>
 
-            <!-- Mensajes -->
             <?php if (isset($_GET['success'])): ?>
-                <div class="alert alert-success text-center">
+                <div class="alert alert-success text-center auto-dismiss">
                     <h1 class="display-4">✅</h1>
-                    <strong>¡Registro Exitoso!</strong><br>
-                    Bienvenido, <?= htmlspecialchars($_GET['nombre']) ?>.
+                    <strong>¡Asistencia confirmada!</strong><br>
+                    <?= htmlspecialchars($_GET['nombre']) ?><br>
+                    <small class="text-muted">
+                    <br>
+                        Te damos la bienvenida al evento.<br>
+                        ¡Te esperamos en futuras actividades!
                 </div>
 
             <?php elseif (isset($_GET['error'])): ?>
-                <div class="alert alert-danger text-center">
-                    <?php if ($_GET['error'] === 'no_encontrado'): ?>
-                        <strong>Documento no encontrado.</strong><br>
-                        No apareces en la base de datos maestra. Acércate al monitor.
-                    <?php elseif ($_GET['error'] === 'duplicado'): ?>
-                        <strong>Ya estás registrado.</strong><br>
-                        Tu asistencia ya fue tomada previamente.
+                <div class="alert alert-warning text-center small auto-dismiss">
+                    
+                    <?php if ($_GET['error'] === 'duplicado'): ?>
+                        <strong>¡Ya estás dentro!</strong><br>
+                        Tu asistencia ya fue registrada previamente.
+
+                    <?php elseif ($_GET['error'] === 'pendiente_aprobacion'): ?>
+                        <strong>⚠️ Cuenta Pendiente</strong><br>
+                        Tu usuario existe pero requiere aprobación del Admin.
+                    
+                    <?php elseif ($_GET['error'] === 'solicitud_enviada'): ?>
+                        <strong>📩 Solicitud Enviada</strong><br>
+                        Tus datos fueron recibidos para validación.
+
+                    <?php elseif ($_GET['error'] === 'longitud_invalida'): ?>
+                        <strong>⚠️ Documento No Válido</strong><br>
+                        Ingresa entre 6 y 15 dígitos reales.
+                    
+                    <?php else: ?>
+                        <strong>Error:</strong> <?= htmlspecialchars($_GET['error']) ?>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
 
-            <!-- Formulario -->
             <?php if (!isset($_GET['success'])): ?>
                 <form action="<?= BASE_URL ?>/asistencia/registrar" method="POST">
-
-                    <!-- Token -->
                     <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">
-                            Número de Documento
-                        </label>
-                        <input
-                            type="number"
-                            name="documento"
-                            class="form-control form-control-lg text-center"
-                            placeholder="Ej: 1090..."
-                            required
+                    <div class="mb-3 text-center">
+                        <label class="form-label fw-bold">Número de Documento</label>
+                        <input 
+                            type="text" 
+                            inputmode="numeric" 
+                            pattern="[0-9]*"
+                            name="documento" 
+                            class="form-control form-control-lg text-center" 
+                            placeholder="Mínimo 6 dígitos" 
+                            minlength="6" 
+                            maxlength="15"
+                            required 
                             autofocus
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '');"
                         >
+                        <div class="form-text small text-muted text-center">
+                            Ingresa tu documento sin puntos ni espacios
+                        </div>
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm">
                             Confirmar Asistencia
                         </button>
                     </div>
-
                 </form>
             <?php endif; ?>
 
         </div>
     </div>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Seleccionamos todas las alertas que tengan la clase 'auto-dismiss'
+            const alertas = document.querySelectorAll('.auto-dismiss');
+            
+            alertas.forEach(function(alerta) {
+                // Esperar 4 segundos antes de empezar a desvanecer
+                setTimeout(() => {
+                    alerta.classList.add('fade-out'); // Añade la clase CSS de transparencia
+                    
+                    // Esperar 1 segundo más (lo que dura la transición CSS) y borrar del DOM
+                    setTimeout(() => {
+                        alerta.remove();
+                        // Opcional: Si quieres recargar la página limpia tras éxito
+                        // window.location.href = window.location.pathname; 
+                    }, 1000); 
+                    
+                }, 4000); // Tiempo visible: 4000ms
+            });
+        });
+    </script>
 </body>
 </html>
