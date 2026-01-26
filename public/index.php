@@ -69,7 +69,7 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
         $router->get('/qr/{token}', "$controllers\EventoController@mostrarQR");
         $router->get('/asistentes/{id}', "$controllers\EventoController@verAsistentes");
         $router->post('/editar/{id}', "$controllers\EventoController@update");
-        $router->get('/eliminar/{id}', "$controllers\EventoController@eliminar");
+        $router->get('/estado/{id}/{estado}', "$controllers\EventoController@cambiarEstado");
     });
 
     // ---------------------------------------------------
@@ -80,6 +80,8 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
     $router->get('/reportes', "$controllers\ReporteController@index");
     $router->post('/reportes/descargar-matriz', "$controllers\ReporteController@descargarMatriz");
     $router->post('/reportes/descargar-individual', "$controllers\ReporteController@descargarIndividual");
+    $router->post('/reportes/descargar-matriz-pdf', "$controllers\ReporteController@descargarMatrizPdf");
+    $router->post('/reportes/descargar-individual-pdf', "$controllers\ReporteController@descargarIndividualPdf");
 
     // ---------------------------------------------------
     // 3. ZONA ADMIN (SOLO ROL 'admin')

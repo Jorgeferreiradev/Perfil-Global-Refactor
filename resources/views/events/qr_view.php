@@ -36,8 +36,8 @@
 
         /* Logo institucional */
         .logo-img {
-            max-height: 70px;
-            margin-bottom: 20px;
+            max-height: 90px;
+            margin-bottom: 40px;
         }
     </style>
 </head>
@@ -47,7 +47,7 @@
     <!-- ==============================
          CONTENEDOR PRINCIPAL
          ============================== -->
-    <div class="qr-card p-2 text-center">
+    <div class="qr-card p-4 text-center">
 
         <!-- LOGO (independiente, NO dentro de otro card) -->
         <div class="mb-2">

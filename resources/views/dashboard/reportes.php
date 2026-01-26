@@ -17,7 +17,10 @@
                 
                 <form action="<?= BASE_URL ?>/dashboard/reportes/descargar-matriz" method="POST">
                     <button type="submit" class="btn btn-light fw-bold w-100 py-2 text-primary">
-                        <i class="fas fa-download me-2"></i> Descargar
+                        <i class="fas fa-download me-2"></i> Descargar Excel
+                    </button>
+                    <button type="submit" class="btn btn-light fw-bold w-100 py-2 text-primary mt-2" formaction="<?= BASE_URL ?>/dashboard/reportes/descargar-matriz-pdf">
+                        <i class="fas fa-file-pdf me-2"></i> Descargar PDF
                     </button>
                 </form>
             </div>
@@ -47,6 +50,10 @@
                         <button type="submit" class="btn btn-outline-dark">
                             <i class="fas fa-file-export me-2"></i> Generar Excel
                         </button>
+                                <button type="submit" class="btn btn-outline-dark mt-2" formaction="<?= BASE_URL ?>/dashboard/reportes/descargar-individual-pdf">
+                                    <i class="fas fa-file-pdf me-2"></i> Generar PDF
+                                </button>
+
                     </div>
                 </form>
             </div>

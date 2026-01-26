@@ -70,9 +70,13 @@ class EventoController {
     /* =======================
        EDITAR EVENTO
     ======================= */
-public function update($id) {
+
+    public function update($id) {
 
     // 1. Obtener evento actual
+    
+    
+
     $model = new Evento();
     $eventoActual = $model->getById($id);
 
@@ -113,14 +117,21 @@ public function update($id) {
 }
 
 
-    /* =======================
-       ELIMINAR EVENTO (SOFT)
+/* =======================
+       CAMBIAR ESTADO (ACTIVAR/DESACTIVAR)
     ======================= */
-    public function eliminar($id) {
-        $model = new Evento();
+    public function cambiarEstado($id, $estado) {
+        // Validar que el estado sea válido para evitar inyecciones
+        $estadosPermitidos = ['activo', 'inactivo'];
+        if (!in_array($estado, $estadosPermitidos)) {
+             header('Location: ' . BASE_URL . '/dashboard/eventos?error=estado_invalido');
+             exit;
+        }
 
-        if ($model->delete($id)) {
-            header('Location: ' . BASE_URL . '/dashboard/eventos?success=eliminado');
+        $model = new Evento();
+        if ($model->cambiarEstado($id, $estado)) {
+            $msg = ($estado == 'activo') ? 'activado' : 'desactivado';
+            header('Location: ' . BASE_URL . '/dashboard/eventos?success=' . $msg);
         } else {
             header('Location: ' . BASE_URL . '/dashboard/eventos?error=db');
         }

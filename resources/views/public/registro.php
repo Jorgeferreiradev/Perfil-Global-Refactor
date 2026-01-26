@@ -11,7 +11,7 @@
             background-color: #eef2f5; 
             min-height: 100vh;
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: center;
         }
         .mobile-card {
@@ -22,7 +22,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             background: white;
         }
-        .logo-img { height: 50px; margin-bottom: 20px; }
+        .logo-img { height: 80px; margin-bottom: 40px; }
         
         /* CLASE PARA LA MAGIA DE DESAPARECER */
         .fade-out {

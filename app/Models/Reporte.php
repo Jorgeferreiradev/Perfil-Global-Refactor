@@ -13,13 +13,13 @@ class Reporte {
 
     /**
      * 1. OBTENER LÍNEAS DE ACCIÓN DEL SEMESTRE
-     * Hacemos JOIN con la tabla 'lineas_accion' para traer el nombre real
      */
     public function getLineasConEventos($fechaInicio, $fechaFin) {
         $sql = "SELECT DISTINCT l.nombre_linea
                 FROM eventos e
                 JOIN lineas_accion l ON e.id_linea_accion = l.id
                 WHERE (e.fecha_inicio BETWEEN :fi AND :ff)
+                AND e.estado = 'activo'
                 ORDER BY l.nombre_linea";
                 
         $stmt = $this->pdo->prepare($sql);
@@ -29,10 +29,8 @@ class Reporte {
 
     /**
      * 2. DATOS DE EVENTOS POR LÍNEA
-     * Filtramos por el nombre de la línea obtenido en el paso 1
      */
     public function getEventosPorLinea($nombreLinea, $fechaInicio, $fechaFin) {
-        // Nota: Ajusté el ID 5 para Externos/Invitados según tu BD
         $sql = "SELECT 
                     e.id_evento, e.nombre_evento, e.fecha_inicio, e.fecha_final,
                     COUNT(CASE WHEN p.id_tipo_persona = 1 THEN 1 END) as est,
@@ -47,6 +45,7 @@ class Reporte {
                 LEFT JOIN personas p ON a.persona_id = p.id
                 WHERE l.nombre_linea = :linea 
                 AND (e.fecha_inicio BETWEEN :fi AND :ff)
+                AND e.estado = 'activo' 
                 GROUP BY e.id_evento";
         
         $stmt = $this->pdo->prepare($sql);
@@ -56,7 +55,6 @@ class Reporte {
 
     /**
      * 3. BENEFICIARIOS REALES (Sin duplicados)
-     * Usamos JOIN para filtrar por la línea correcta
      */
     public function getBeneficiariosRealesPorLinea($nombreLinea, $fechaInicio, $fechaFin) {
         $sql = "SELECT 
@@ -70,7 +68,8 @@ class Reporte {
                 JOIN asistencias a ON e.id_evento = a.id_evento
                 JOIN personas p ON a.persona_id = p.id
                 WHERE l.nombre_linea = :linea 
-                AND (e.fecha_inicio BETWEEN :fi AND :ff)";
+                AND (e.fecha_inicio BETWEEN :fi AND :ff)
+                AND e.estado = 'activo'"; // Corregido: comilla y punto y coma
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':linea' => $nombreLinea, ':fi' => $fechaInicio, ':ff' => $fechaFin]);
@@ -78,8 +77,7 @@ class Reporte {
     }
 
     /**
-     * 4. DETALLE DE ASISTENTES
-     * Usa tus tablas reales: programas, tipos_personas
+     * 4. DETALLE DE ASISTENTES POR EVENTO
      */
     public function getDetalleAsistentes($idEvento) {
         $sql = "SELECT 
@@ -103,15 +101,13 @@ class Reporte {
     
     /**
      * 5. INFO EVENTO
-     * Hacemos JOIN para obtener 'linea_accion' como nombre, 
-     * así el controlador no falla al buscar esa clave.
      */
     public function getInfoEvento($id) {
         $sql = "SELECT e.*, l.nombre_linea as linea_accion 
                 FROM eventos e
                 LEFT JOIN lineas_accion l ON e.id_linea_accion = l.id
                 WHERE e.id_evento = ?";
-                
+        
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);

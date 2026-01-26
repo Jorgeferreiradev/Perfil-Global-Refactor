@@ -24,7 +24,7 @@ class Evento {
                 FROM eventos e
                 INNER JOIN lineas_accion l ON e.id_linea_accion = l.id
                 LEFT JOIN programas p ON e.programa_responsable = p.id_programa
-                WHERE e.estado = 'activo'";
+               WHERE 1=1";
 
         $params = [];
 
@@ -56,6 +56,14 @@ class Evento {
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+
+        // AGREGAR ESTE NUEVO FILTRO AL FINAL DE LOS IFs
+        if (isset($filtros['estado']) && $filtros['estado'] !== '') {
+             $sql .= " AND e.estado = :estado";
+             $params[':estado'] = $filtros['estado'];
+        }
+
+        $sql .= " ORDER BY e.fecha_inicio DESC";
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -180,21 +188,25 @@ class Evento {
         ]);
     }
 
-    /* =====================================================
-       6. ELIMINAR EVENTO (SOFT DELETE)
-    ===================================================== */
-    public function delete($id) {
+    
 
+
+    /* =====================================================
+    6. MÉTODO PARA CAMBIAR ESTADO (Reemplaza a delete)
+    ===================================================== */
+
+    public function cambiarEstado($id, $nuevoEstado) {
         $sql = "UPDATE eventos 
-                SET estado = 'inactivo' 
+                SET estado = :estado, 
+                    deleted_at = CASE WHEN :estado = 'inactivo' THEN NOW() ELSE NULL END
                 WHERE id_evento = :id";
 
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([':id' => $id]);
+        return $stmt->execute([':estado' => $nuevoEstado, ':id' => $id]);
     }
 
     /* =====================================================
-       HELPERS
+    HELPERS
     ===================================================== */
     public function getLineas() {
         return $this->pdo

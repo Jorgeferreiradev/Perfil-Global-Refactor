@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Models\Reporte;
 use App\Models\Evento;
 use App\Services\ExcelReportService; // ✅ Importante: Usamos el servicio profesional
+use App\Services\PdfReportService;
 
 class ReporteController {
 
@@ -101,4 +102,49 @@ class ReporteController {
         // 3. Generar Excel Real (.xlsx)
         $excelService->generarIndividual($info, $resumen, $asistentes);
     }
+
+    public function descargarMatrizPdf() {
+    $reporteModel = new Reporte();
+    $pdfService = new PdfReportService();
+
+    // (Lógica de fechas igual que en Excel...)
+    $mes = date('n'); $anio = date('Y');
+    if ($mes <= 6) { $fi = "$anio-01-01"; $ff = "$anio-06-30"; $sem = "$anio-I"; } 
+    else { $fi = "$anio-07-01"; $ff = "$anio-12-31"; $sem = "$anio-II"; }
+
+    $datosCompletos = [];
+    $lineas = $reporteModel->getLineasConEventos($fi, $ff);
+    foreach ($lineas as $nombreLinea) {
+        $datosCompletos[$nombreLinea] = [
+            'eventos' => $reporteModel->getEventosPorLinea($nombreLinea, $fi, $ff),
+            'reales'  => $reporteModel->getBeneficiariosRealesPorLinea($nombreLinea, $fi, $ff)
+        ];
+    }
+
+    $pdfService->generarMatrizSemestral($sem, $datosCompletos);
+}
+
+public function descargarIndividualPdf() {
+    $idEvento = $_POST['id_evento'];
+    $reporteModel = new Reporte();
+    $pdfService = new PdfReportService();
+
+    $info = $reporteModel->getInfoEvento($idEvento);
+    $asistentes = $reporteModel->getDetalleAsistentes($idEvento);
+    
+    // (Lógica de resumen igual que Excel...)
+    $resumen = ['Estudiante' => 0, 'Docente' => 0, 'Administrativo' => 0, 'Egresado' => 0, 'Invitado' => 0];
+    foreach ($asistentes as $a) {
+        if (strpos($a['tipo_vinculacion'], 'Estudiante') !== false) $resumen['Estudiante']++;
+        elseif (strpos($a['tipo_vinculacion'], 'Docente') !== false) $resumen['Docente']++;
+        elseif (strpos($a['tipo_vinculacion'], 'Administrativo') !== false) $resumen['Administrativo']++;
+        elseif (strpos($a['tipo_vinculacion'], 'Egresado') !== false) $resumen['Egresado']++;
+        else $resumen['Invitado']++;
+    }
+
+    $pdfService->generarIndividual($info, $resumen, $asistentes);
+}
+
+
+
 }

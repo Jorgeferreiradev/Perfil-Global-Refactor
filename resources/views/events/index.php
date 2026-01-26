@@ -1,325 +1,352 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold"><i class="fas fa-calendar-check me-2 text-primary"></i>Gestión de Eventos</h2>
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearEvento">
+    <h2 class="fw-bold text-dark"><i class="fas fa-calendar-check me-2 text-primary"></i>Gestión de Eventos</h2>
+    <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearEvento">
         <i class="fas fa-plus me-2"></i>Nuevo Evento
     </button>
+</div>
+
+<div id="alert-container">
+    <?php if (isset($_GET['success'])): ?>
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <strong>¡Excelente!</strong> 
+            <?php 
+                if($_GET['success'] == 'activado') echo "El evento ha sido reactivado exitosamente.";
+                elseif($_GET['success'] == 'desactivado') echo "El evento ha sido desactivado (no aparecerá en reportes).";
+                else echo "La operación se realizó correctamente.";
+            ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+    <?php if (isset($_GET['error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <strong>Error:</strong> Verifica los datos o intenta nuevamente.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
 </div>
 
 <div class="card mb-4 shadow-sm border-0 bg-light">
     <div class="card-body">
         <form action="<?= BASE_URL ?>/dashboard/eventos" method="GET" class="row g-3">
             <div class="col-md-3">
-                <select name="linea" class="form-select">
+                <select name="linea" class="form-select border-0 shadow-sm" onchange="this.form.submit()">
                     <option value="">Todas las Líneas</option>
                     <?php foreach($lineas as $l): ?>
-                        <option value="<?= $l['id'] ?>" <?= ($_GET['linea'] ?? '') == $l['id'] ? 'selected' : '' ?>>
+                        <option value="<?= $l['id'] ?>" <?= (isset($_GET['linea']) && $_GET['linea'] == $l['id']) ? 'selected' : '' ?>>
                             <?= $l['nombre_linea'] ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-3">
-                <select name="programa" class="form-select">
+                <select name="programa" class="form-select border-0 shadow-sm" onchange="this.form.submit()">
                     <option value="">Todos los Programas</option>
                     <?php foreach($programas as $p): ?>
-                        <option value="<?= $p['id_programa'] ?>" <?= ($_GET['programa'] ?? '') == $p['id_programa'] ? 'selected' : '' ?>>
+                        <option value="<?= $p['id_programa'] ?>" <?= (isset($_GET['programa']) && $_GET['programa'] == $p['id_programa']) ? 'selected' : '' ?>>
                             <?= $p['nombre_programa'] ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
+            
             <div class="col-md-2">
-                <input type="date" name="fecha" class="form-control" value="<?= $_GET['fecha'] ?? '' ?>">
+                    <input type="date" name="fecha" class="form-control border-0 shadow-sm" 
+                        value="<?= $_GET['fecha'] ?? '' ?>" 
+                        onchange="this.form.submit()">
             </div>
+
             <div class="col-md-3">
-                <div class="input-group">
-                    <input type="text" name="busqueda" class="form-control" placeholder="Buscar evento..." value="<?= $_GET['busqueda'] ?? '' ?>">
-                    <button type="submit" class="btn btn-secondary"><i class="fas fa-search"></i></button>
+                <div class="input-group shadow-sm">
+                    <input type="text" name="busqueda" class="form-control border-0" placeholder="Buscar y presiona Enter..." value="<?= $_GET['busqueda'] ?? '' ?>">
+                    <button type="submit" class="btn btn-white bg-white border-0"><i class="fas fa-search text-muted"></i></button>
                 </div>
             </div>
             <div class="col-md-1">
-                 <a href="<?= BASE_URL ?>/dashboard/eventos" class="btn btn-outline-danger w-100" title="Limpiar"><i class="fas fa-times"></i></a>
+                 <a href="<?= BASE_URL ?>/dashboard/eventos" class="btn btn-outline-danger w-100 shadow-sm" title="Limpiar Filtros"><i class="fas fa-times"></i></a>
             </div>
         </form>
     </div>
 </div>
 
-<?php if(isset($_GET['error'])): ?>
-    <div class="alert alert-danger">
-        <?php 
-            if($_GET['error'] == 'fecha_pasada') echo "Error: No puedes crear eventos en el pasado.";
-            else echo "Ha ocurrido un error en la base de datos.";
-        ?>
-    </div>
-<?php endif; ?>
-
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead class="bg-light text-secondary">
                     <tr>
-                        <th>Evento / Línea</th>
+                        <th class="ps-4">Evento / Línea</th>
                         <th>Programa Resp.</th>
-                        <th>Fecha</th>
+                        <th>Horario</th>
+                        <th>Sede</th>
                         <th>Estado</th>
-                        <th class="text-end">Acciones</th>
+                        <th class="text-end pe-4">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach($eventos as $evt): 
-                        // LÓGICA DE ESTADOS CORREGIDA CON DATETIME
-                        $ahora = new DateTime("now"); // Usa la zona horaria de config.php
-                        $inicio = new DateTime($evt['fecha_inicio'] . ' ' . $evt['hora_inicio']);
-                        $fin    = new DateTime($evt['fecha_final'] . ' ' . $evt['hora_final']);
+                    <?php if(empty($eventos)): ?>
+                        <tr><td colspan="6" class="text-center py-5 text-muted">No se encontraron eventos.</td></tr>
+                    <?php else: ?>
+                        <?php foreach($eventos as $evt): 
+                            $isInactive = ($evt['estado'] == 'inactivo');
+                            $rowClass = $isInactive ? 'bg-light text-muted opacity-75' : '';
+                            
+                            $ahora = new DateTime("now");
+                            $inicio = new DateTime($evt['fecha_inicio'] . ' ' . $evt['hora_inicio']);
+                            $fin    = new DateTime($evt['fecha_final'] . ' ' . $evt['hora_final']);
 
-                        if ($ahora < $inicio) {
-                            $badge = '<span class="badge bg-primary">Programado</span>';
-                        } elseif ($ahora >= $inicio && $ahora <= $fin) {
-                            $badge = '<span class="badge bg-success">En Curso</span>';
-                        } else {
-                            $badge = '<span class="badge bg-secondary">Cerrado</span>';
-                        }
-                    ?>
-                    <tr>
-                        <td>
-                            <div class="fw-bold text-dark"><?= htmlspecialchars($evt['nombre_evento']) ?></div>
-                            <small class="text-muted"><?= htmlspecialchars($evt['nombre_linea']) ?></small>
-                        </td>
-                        <td>
-                            <span class="badge bg-light text-dark border">
-                                <?= htmlspecialchars($evt['programa_nombre'] ?? 'General') ?>
-                            </span>
-                        </td>
-                        <td>
-                            <?= $inicio->format('d/m/Y') ?><br>
-                            <small><?= $inicio->format('H:i') ?> - <?= $fin->format('H:i') ?></small>
-                        </td>
-                        <td><?= $badge ?></td>
-                        <td class="text-end">
-                            <a href="<?= BASE_URL ?>/dashboard/eventos/qr/<?= $evt['token_qr'] ?>" 
-                            target="_blank" 
-                            class="btn btn-sm btn-outline-dark" 
-                            title="Ver QR">
-                                <i class="fas fa-qrcode"></i>
-                            </a>
-
-                            <a href="<?= BASE_URL ?>/dashboard/eventos/asistentes/<?= $evt['id_evento'] ?>" 
-                            class="btn btn-sm btn-info text-white" 
-                            title="Asistentes">
-                                <i class="fas fa-users"></i>
-                            </a>
-
-                            <td class="text-end">
+                            if ($isInactive) {
+                                $badge = '<span class="badge bg-secondary px-3">Desactivado</span>';
+                            } elseif ($ahora < $inicio) {
+                                $badge = '<span class="badge rounded-pill bg-primary bg-opacity-10 text-primary px-3">Programado</span>';
+                            } elseif ($ahora >= $inicio && $ahora <= $fin) {
+                                $badge = '<span class="badge rounded-pill bg-success bg-opacity-10 text-success px-3"><i class="fas fa-circle fa-xs me-1"></i>En Curso</span>';
+                            } else {
+                                $badge = '<span class="badge rounded-pill bg-secondary bg-opacity-10 text-secondary px-3">Cerrado</span>';
+                            }
+                        ?>
+                        <tr class="<?= $rowClass ?>">
+                            <td class="ps-4">
+                                <div class="fw-bold <?= $isInactive ? 'text-muted' : 'text-dark' ?> text-uppercase"><?= htmlspecialchars($evt['nombre_evento']) ?></div>
+                                <small class="<?= $isInactive ? 'text-muted' : 'text-info' ?>"><i class="fas fa-tag me-1"></i><?= htmlspecialchars($evt['nombre_linea']) ?></small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border fw-normal">
+                                    <?= htmlspecialchars($evt['programa_nombre'] ?? 'General') ?>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="small fw-bold"><?= $inicio->format('d/m/Y') ?></div>
+                                <small><?= $inicio->format('H:i') ?> - <?= $fin->format('H:i') ?></small>
+                            </td>
+                            <td><?= $evt['sede'] ?></td>
+                            <td><?= $badge ?></td>
+                            
+                            <td class="text-end pe-4">
                                 <div class="dropdown">
-                                    <button class="btn btn-sm btn-light border dropdown-toggle"
-                                            type="button"
-                                            data-bs-toggle="dropdown"
-                                            aria-expanded="false"
-                                            title="Acciones">
-                                        <i class="fas fa-ellipsis-v"></i>
+                                    <button class="btn btn-light btn-sm border shadow-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-cog text-secondary"></i>
                                     </button>
+                                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
+                                        <li><h6 class="dropdown-header text-uppercase small fw-bold">Opciones</h6></li>
+                                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/dashboard/eventos/qr/<?= $evt['token_qr'] ?>" 
+                                        target="_blank"><i class="fas fa-qrcode me-2"></i> Ver QR</a></li>
+                                        <li><a class="dropdown-item" href="<?= BASE_URL ?>/dashboard/eventos/asistentes/<?= $evt['id_evento'] ?>">
+                                            <i class="fas fa-users me-2 text-info"></i> Asistentes</a></li>
+                                        <li>
+                                            <button class="dropdown-item" onclick="copiarLink('<?= BASE_URL ?>/asistencia/<?= $evt['token_qr'] ?>')">
+                                                <i class="fas fa-link me-2 text-primary"></i> Copiar Link Registro
+                                            </button>
+                                        </li>
+                                        
 
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-
-
-                                        <!-- FUTURO -->
                                         <li><hr class="dropdown-divider"></li>
-
+                                        
                                         <li>
-                                            <button class="dropdown-item disabled">
-                                                <i class="fas fa-file-excel me-2 text-success"></i> Exportar (próximamente)
-                                            </button>
-                                        </li>
-
-                                        <li>
-                                            <button class="dropdown-item"
-                                                    onclick="copiarLink('<?= BASE_URL ?>/dashboard/eventos/asistentes/<?= $evt['id_evento'] ?>')">
-                                                <i class="fas fa-link me-2"></i> Copiar enlace
-                                            </button>
-                                        </li>
-
-                                                                                <!-- Editar -->
-                                        <li>
-                                            <button class="dropdown-item"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalEditar<?= $evt['id_evento'] ?>">
+                                            <button class="dropdown-item btn-editar" 
+                                                data-id="<?= $evt['id_evento'] ?>"
+                                                data-nombre="<?= $evt['nombre_evento'] ?>"
+                                                data-linea="<?= $evt['id_linea_accion'] ?>"
+                                                data-programa="<?= $evt['programa_responsable'] ?>"
+                                                data-sede="<?= $evt['sede'] ?>"
+                                                data-fini="<?= $evt['fecha_inicio'] ?>"
+                                                data-hini="<?= $evt['hora_inicio'] ?>"
+                                                data-ffin="<?= $evt['fecha_final'] ?>"
+                                                data-hfin="<?= $evt['hora_final'] ?>"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalEditarEvento">
                                                 <i class="fas fa-edit me-2 text-warning"></i> Editar
                                             </button>
                                         </li>
 
-                                        <!-- Eliminar (soft delete) -->
-                                        <li>
-                                            <button class="dropdown-item text-danger"
-                                                    onclick="confirmarDesactivacion(<?= $evt['id_evento'] ?>)">
-                                                <i class="fas fa-ban me-2"></i>Desactivar evento
-                                            </button>
-                                        </li>
-
+                                        <?php if($isInactive): ?>
+                                            <li><a class="dropdown-item text-success fw-bold" href="<?= BASE_URL ?>/dashboard/eventos/estado/<?= $evt['id_evento'] ?>/activo"><i class="fas fa-check-circle me-2"></i> Reactivar</a></li>
+                                        <?php else: ?>
+                                            <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/dashboard/eventos/estado/<?= $evt['id_evento'] ?>/inactivo" onclick="return confirm('¿Al desactivarlo NO aparecerá en reportes. Continuar?')"><i class="fas fa-ban me-2"></i> Desactivar</a></li>
+                                        <?php endif; ?>
                                     </ul>
                                 </div>
                             </td>
-
-                        </td>
-
-                    </tr>
-
-                    <div class="modal fade" id="modalEditar<?= $evt['id_evento'] ?>" tabindex="-1">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <form action="<?= BASE_URL ?>/dashboard/eventos/editar/<?= $evt['id_evento'] ?>" method="POST">
-                                    
-                                    <div class="modal-header bg-warning">
-                                        <h5 class="modal-title fw-bold">Editar Evento</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body text-start">
-
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold">Nombre del Evento</label>
-                                            <input type="text"
-                                                name="nombre_evento"
-                                                class="form-control"
-                                                value="<?= htmlspecialchars($evt['nombre_evento']) ?>"
-                                                required>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <label class="form-label">Fecha Inicio</label>
-                                                <input type="date"
-                                                    name="fecha_inicio"
-                                                    class="form-control"
-                                                    value="<?= $evt['fecha_inicio'] ?>"
-                                                    required>
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="form-label">Hora Inicio</label>
-                                                <input type="time"
-                                                    name="hora_inicio"
-                                                    class="form-control"
-                                                    value="<?= $evt['hora_inicio'] ?>"
-                                                    required>
-                                            </div>
-                                        </div>
-
-                                        <div class="row mt-2">
-                                            <div class="col-6">
-                                                <label class="form-label">Fecha Final</label>
-                                                <input type="date"
-                                                    name="fecha_final"
-                                                    class="form-control"
-                                                    value="<?= $evt['fecha_final'] ?>"
-                                                    required>
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="form-label">Hora Final</label>
-                                                <input type="time"
-                                                    name="hora_final"
-                                                    class="form-control"
-                                                    value="<?= $evt['hora_final'] ?>"
-                                                    required>
-                                            </div>
-                                        </div>
-
-                                        <!-- Campos ocultos que el controlador espera -->
-                                        <input type="hidden" name="linea_accion" value="<?= $evt['id_linea_accion'] ?>">
-                                        <input type="hidden" name="programa_responsable" value="<?= $evt['programa_responsable'] ?>">
-                                        <input type="hidden" name="sede" value="<?= $evt['sede'] ?>">
-
-                                    </div>
-
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                            Cancelar
-                                        </button>
-                                        <button type="submit" class="btn btn-warning fw-bold">
-                                            Actualizar
-                                        </button>
-                                    </div>
-
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
-
-
-                    <?php endforeach; ?>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalCrearEvento" tabindex="-1">
+<div class="modal fade" id="modalCrearEvento" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+        <div class="modal-content border-0 shadow-lg">
             <form action="<?= BASE_URL ?>/dashboard/eventos/crear" method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Nuevo Evento</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle me-2"></i>Nuevo Evento</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Nombre del Evento</label>
-                            <input type="text" name="nombre_evento" class="form-control" required>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Línea de Acción</label>
-                            <select name="linea_accion" class="form-select" required>
-                                <option value="" selected disabled>Seleccione...</option>
-                                <?php foreach($lineas as $l): ?>
-                                    <option value="<?= $l['id'] ?>"><?= $l['nombre_linea'] ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Programa Responsable</label>
-                            <select name="programa_responsable" class="form-select" required>
-                                <option value="" selected disabled>Seleccione...</option>
-                                <?php foreach($programas as $p): ?>
-                                    <option value="<?= $p['id_programa'] ?>"><?= $p['nombre_programa'] ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Sede</label>
-                            <select name="sede" class="form-select">
-                                <option value="Cucuta">Cúcuta</option>
-                                <option value="Ocaña">Ocaña</option>
-                            </select>
-                        </div>
-
-                        <div class="col-12"><hr></div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Inicio</label>
-                            <div class="input-group">
-                                <input type="date" name="fecha_inicio" class="form-control" required min="<?= date('Y-m-d') ?>">
-                                <input type="time" name="hora_inicio" class="form-control" required>
+                <div class="modal-body bg-light">
+                    <div class="card border-0 shadow-sm p-3">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Nombre de la Actividad</label>
+                                <input type="text" name="nombre_evento" class="form-control form-control-lg fw-bold" oninput="this.value = this.value.toUpperCase()" required>
                             </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Fin</label>
-                            <div class="input-group">
-                                <input type="date" name="fecha_final" class="form-control" required min="<?= date('Y-m-d') ?>">
-                                <input type="time" name="hora_final" class="form-control" required>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Línea de Acción</label>
+                                <select name="linea_accion" class="form-select" required>
+                                    <option value="" selected disabled>Seleccione...</option>
+                                    <?php foreach($lineas as $l): ?>
+                                        <option value="<?= $l['id'] ?>"><?= $l['nombre_linea'] ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Programa Responsable</label>
+                                <select class="form-select" name="programa_responsable" required>
+                                    <option value="">Seleccione...</option>
+                                    <?php foreach ($programas as $prog): ?>
+                                        <option value="<?= $prog['id_programa'] ?>" <?= ($prog['id_programa'] == 98) ? 'selected' : '' ?>><?= $prog['nombre_programa'] ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Sede</label>
+                                <div class="d-flex gap-3">
+                                    <div class="form-check"><input class="form-check-input" type="radio" name="sede" value="Cúcuta" checked><label class="form-check-label">Cúcuta</label></div>
+                                    <div class="form-check"><input class="form-check-input" type="radio" name="sede" value="Ocaña"><label class="form-check-label">Ocaña</label></div>
+                                </div>
+                            </div>
+                            <div class="col-12"><hr class="text-muted opacity-25"></div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Inicio</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fas fa-calendar text-primary"></i></span>
+                                    <input type="date" name="fecha_inicio" class="form-control" required min="<?= date('Y-m-d') ?>">
+                                    <input type="time" name="hora_inicio" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Fin</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fas fa-flag-checkered text-danger"></i></span>
+                                    <input type="date" name="fecha_final" class="form-control" required min="<?= date('Y-m-d') ?>">
+                                    <input type="time" name="hora_final" class="form-control" required>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Evento</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4">Guardar Evento</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalEditarEvento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <form id="formEditarEvento" action="" method="POST">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Editar Evento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <div class="card border-0 shadow-sm p-3">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Nombre de la Actividad</label>
+                                <input type="text" name="nombre_evento" id="edit_nombre" class="form-control form-control-lg fw-bold" oninput="this.value = this.value.toUpperCase()" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Línea de Acción</label>
+                                <select name="linea_accion" id="edit_linea" class="form-select" required>
+                                    <?php foreach($lineas as $l): ?>
+                                        <option value="<?= $l['id'] ?>"><?= $l['nombre_linea'] ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Programa Responsable</label>
+                                <select class="form-select" name="programa_responsable" id="edit_programa" required>
+                                    <option value="">Seleccione...</option>
+                                    <?php foreach ($programas as $prog): ?>
+                                        <option value="<?= $prog['id_programa'] ?>"><?= $prog['nombre_programa'] ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Sede</label>
+                                <select name="sede" id="edit_sede" class="form-select w-auto">
+                                    <option value="Cúcuta">Cúcuta</option>
+                                    <option value="Ocaña">Ocaña</option>
+                                </select>
+                            </div>
+                            <div class="col-12"><hr class="text-muted opacity-25"></div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Inicio</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fas fa-calendar text-primary"></i></span>
+                                    <input type="date" name="fecha_inicio" id="edit_fini" class="form-control" required>
+                                    <input type="time" name="hora_inicio" id="edit_hini" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Fin</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fas fa-flag-checkered text-danger"></i></span>
+                                    <input type="date" name="fecha_final" id="edit_ffin" class="form-control" required>
+                                    <input type="time" name="hora_final" id="edit_hfin" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning fw-bold px-4">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // AUTO DISMISS ALERTAS
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function() {
+            let alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                let bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 4000);
+    });
+
+    // COPIAR ENLACE
+    function copiarLink(url) {
+        navigator.clipboard.writeText(url).then(() => {
+            alert("Enlace de asistencia copiado");
+        }).catch(err => console.error('Error:', err));
+    }
+
+    // LLENAR MODAL EDITAR
+    document.addEventListener("DOMContentLoaded", function() {
+        const editBtns = document.querySelectorAll('.btn-editar');
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const d = this.dataset;
+                document.getElementById('edit_nombre').value = d.nombre;
+                document.getElementById('edit_linea').value = d.linea;
+                document.getElementById('edit_programa').value = d.programa ? d.programa : '';
+                document.getElementById('edit_sede').value = d.sede;
+                document.getElementById('edit_fini').value = d.fini;
+                document.getElementById('edit_hini').value = d.hini;
+                document.getElementById('edit_ffin').value = d.ffin;
+                document.getElementById('edit_hfin').value = d.hfin;
+                document.getElementById('formEditarEvento').action = "<?= BASE_URL ?>/dashboard/eventos/editar/" + d.id;
+            });
+        });
+    });
+</script>
