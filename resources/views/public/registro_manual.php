@@ -56,6 +56,17 @@
                     <input type="hidden" name="documento" value="<?= $documento ?>">
 
                     <div class="row g-2 mb-3">
+                        <div>class="col-6">
+                            <label class="form-label small fw-bold">Tipo Doc.</label>
+                            <select name="tipo_documento" class="form-select" required>
+                                <option value="CC">Cédula (CC)</option>
+                                <option value="TI">Tarjeta Identidad</option>
+                                <option value="PPT">PPT</option>
+                                <option value="CE">Extranjería</option>
+                                <option value="PASAPORTE">Pasaporte</option>
+                            </select>
+                        </div>
+
                         <div class="col-6">
                             <label class="form-label small fw-bold">Nombres</label>
                             <input type="text" name="nombres" class="form-control" required 

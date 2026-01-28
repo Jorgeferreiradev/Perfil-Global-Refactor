@@ -2,20 +2,20 @@
 // config/config.php
 
 // 1. ZONA HORARIA
-date_default_timezone_set('America/Bogota'); 
+date_default_timezone_set('America/Bogota');
 
-// 2. BASE URL (CONFIGURACIÓN NGROK)
-// ---------------------------------------------------------
-// COMENTAMOS ESTO TEMPORALMENTE PARA LA PRUEBA MÓVIL:
-/*
-$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
-$host = $_SERVER['HTTP_HOST']; 
-define('BASE_URL', $protocol . "://" . $host . "/perfilglobal_v2/public");
-*/
+// 2. DETECCIÓN AUTOMÁTICA DE BASE_URL
+$https = (
+    (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+);
 
-// PONEMOS LA URL DE NGROK FIJA:
-define('BASE_URL', ' https://dimensionally-schedular-elli.ngrok-free.dev/perfilglobal_v2/public');
-// ---------------------------------------------------------
+$protocol = $https ? 'https' : 'http';
+$host     = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
-// Credenciales BD...
-// ...
+$basePath = '/perfilglobal_v2/public';
+
+define('BASE_URL', $protocol . '://' . $host . $basePath);
+
+// 3. BASE PATH DEL SISTEMA (para includes)
+define('BASE_PATH', dirname(__DIR__));

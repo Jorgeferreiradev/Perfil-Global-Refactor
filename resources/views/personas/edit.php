@@ -1,0 +1,94 @@
+<?php include __DIR__ . '/../layouts/header.php'; ?>
+
+<div class="container px-4 mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <?php if(isset($_SESSION['flash'])): ?>
+                <div class="alert alert-<?= $_SESSION['flash']['type'] ?> alert-dismissible fade show">
+                    <?= $_SESSION['flash']['msg'] ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <?php unset($_SESSION['flash']); ?>
+            <?php endif; ?>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0 text-warning"><i class="fas fa-user-edit me-2"></i>Editar Persona</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form action="<?= BASE_URL ?>/dashboard/personas/actualizar/<?= $persona['id'] ?>" method="POST">
+                        
+                        <div class="row g-3">
+                            <div class="col-md-12 mb-2">
+                                <label class="form-label fw-bold">Tipo de Vinculación</label>
+                                <select name="id_tipo_persona" class="form-select" required>
+                                    <?php foreach($tipos as $t): ?>
+                                        <option value="<?= $t['id_tipo'] ?>" <?= $persona['id_tipo_persona'] == $t['id_tipo'] ? 'selected' : '' ?>>
+                                            <?= $t['nombre_tipo'] ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Tipo Doc.</label>
+                                <select name="tipo_documento" class="form-select">
+                                    <option value="CC" <?= $persona['tipo_documento'] == 'CC' ? 'selected' : '' ?>>Cédula (CC)</option>
+                                    <option value="TI" <?= $persona['tipo_documento'] == 'TI' ? 'selected' : '' ?>>Tarjeta Identidad</option>
+                                    <option value="PPT" <?= $persona['tipo_documento'] == 'PPT' ? 'selected' : '' ?>>PPT</option>
+                                    <option value="CE" <?= $persona['tipo_documento'] == 'CE' ? 'selected' : '' ?>>Extranjería</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Número de Documento</label>
+                                <input type="number" name="numero_documento" class="form-control" value="<?= $persona['numero_documento'] ?>" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Nombres</label>
+                                <input type="text" name="nombres" class="form-control" value="<?= $persona['nombres'] ?>" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Apellidos</label>
+                                <input type="text" name="apellidos" class="form-control" value="<?= $persona['apellidos'] ?>" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Correo Institucional</label>
+                                <input type="email" name="correo_institucional" class="form-control" value="<?= $persona['correo_institucional'] ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono / Celular <span class="text-danger">*</span></label>
+                                <input type="text" name="telefono" class="form-control" value="<?= $persona['telefono'] ?? '' ?>" required>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmarEliminar(<?= $persona['id'] ?>)">
+                                <i class="fas fa-trash me-1"></i> Eliminar
+                            </button>
+
+                            <div class="d-flex gap-2">
+                                <a href="<?= BASE_URL ?>/dashboard/personas" class="btn btn-light border">Cancelar</a>
+                                <button type="submit" class="btn btn-warning px-4"><i class="fas fa-save me-2"></i>Actualizar</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmarEliminar(id) {
+    if(confirm('¿Estás seguro de eliminar a esta persona? Esta acción enviará el registro a la papelera.')) {
+        window.location.href = '<?= BASE_URL ?>/dashboard/personas/eliminar/' + id;
+    }
+}
+</script>
+
+<?php include __DIR__ . '/../layouts/footer.php'; ?>

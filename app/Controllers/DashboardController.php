@@ -5,42 +5,81 @@ use App\Models\Evento;
 use App\Models\Asistencia;
 use App\Models\Persona;
 use App\Models\Usuario;
-use Config\Database; // Necesario para la conexión directa en el helper
+use App\Models\DashboardModel;
+use Config\Database;
 
 class DashboardController {
 
     public function index() {
-        // Inicializamos modelos
-        $eventoModel = new Evento();
-        $personaModel = new Persona();
-        // $usuarioModel se instancia abajo directo
 
-        // --- DATOS REALES (KPIs) ---
-        
-        // 1. Asistencias HOY (Global)
+        // 🔐 Verificar sesión
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . BASE_URL . '/login');
+            exit;
+        }
+
+        // Inicializar modelos
+        $eventoModel    = new Evento();
+        $personaModel   = new Persona();
+        $dashboardModel = new DashboardModel();
+
+        // ─────────────────────────────
+        // 0️⃣ Semestre y Año actual
+        // ─────────────────────────────
+        $mes  = date('n');
+        $anio = date('Y');
+        $semestreLabel = ($mes <= 6) ? "I (Ene - Jun)" : "II (Jul - Dic)";
+
+        // ─────────────────────────────
+        // 1️⃣ KPIs principales
+        // ─────────────────────────────
         $hoy = date('Y-m-d');
-        // Usamos el helper corregido con 'fecha_asistencia'
-        $asistenciasHoy = $this->getConteoAsistenciasHoy($hoy); 
+        $asistenciasHoy = $this->getConteoAsistenciasHoy($hoy);
 
-        // 2. Eventos Activos (Para listar en el dashboard)
-        // Buscamos eventos que estén ocurriendo hoy
-        $eventosActivos = $eventoModel->all(); 
-        // (Si quisieras filtrar solo los de hoy, harías un filtro aquí, 
-        // pero mejor mostrar todos para que se vea lleno el dashboard)
+        $eventosActivos = $eventoModel->all();
+        $totalEventos   = $dashboardModel->getTotalEventos();
 
-        // 3. Pendientes (Para el globo rojo y la tarjeta de alerta)
+        // ─────────────────────────────
+        // 2️⃣ Personas por tipo
+        // ─────────────────────────────
+        $tipos = $dashboardModel->getConteoPorTipos();
+
+        // ─────────────────────────────
+        // 3️⃣ Pendientes y usuarios
+        // ─────────────────────────────
         $totalPendientes = $personaModel->contarPendientes();
-        $_SESSION['pendientes_count'] = $totalPendientes; 
+        $_SESSION['pendientes_count'] = $totalPendientes;
 
-        // 4. Preparar DATA para la vista
+        // ─────────────────────────────
+        // 4️⃣ DATA FINAL PARA LA VISTA
+        // ─────────────────────────────
         $data = [
+
+            // Semestre
+            'semestre_actual' => $semestreLabel,
+            'anio_actual'     => $anio,
+
+            // KPIs superiores
             'asistencias_hoy' => $asistenciasHoy,
-            'eventos_activos' => $eventosActivos, // Pasamos la lista real
-            'total_pendientes'=> $totalPendientes,
-            'total_usuarios'  => (new Usuario())->countAll()
+            'total_eventos'   => $totalEventos,
+            'eventos_activos' => $eventosActivos,
+
+            // Personas
+            'total_personas'        => $dashboardModel->getTotalPersonas(),
+            'total_estudiantes'     => $tipos['Estudiante'] ?? 0,
+            'total_docentes'        => $tipos['Docente'] ?? 0,
+            'total_administrativos' => $tipos['Administrativo'] ?? 0,
+            'total_egresados'       => $tipos['Egresado'] ?? 0,
+            'total_invitados'       => ($tipos['Invitado'] ?? 0) + ($tipos['Externo'] ?? 0),
+
+            // Admin
+            'total_pendientes'       => $totalPendientes,
+            'total_usuarios_sistema' => (new Usuario())->countAll(),
+            'total_cargas'           => $dashboardModel->getTotalCargasMasivas(),
         ];
 
-        $title = "Panel de Control";
+        // Layout + vista
+        $title  = "Panel de Control";
         $active = "dashboard";
 
         require_once __DIR__ . '/../../resources/views/layouts/header.php';
@@ -49,17 +88,18 @@ class DashboardController {
         require_once __DIR__ . '/../../resources/views/layouts/footer.php';
     }
 
-    //Helper privado para conteo rápido
+    // 🔧 Helper para asistencias de hoy
     private function getConteoAsistenciasHoy($fecha) {
         $db = Database::getInstance();
-        
-        // [CORRECCIÓN AQUÍ] Usamos 'fecha_asistencia' que es tu columna real
-        $sql = "SELECT COUNT(*) as total FROM asistencias WHERE DATE(fecha_asistencia) = ?";
-        
+
+        $sql = "SELECT COUNT(*) AS total 
+                FROM asistencias 
+                WHERE DATE(fecha_asistencia) = ?";
+
         $stmt = $db->prepare($sql);
         $stmt->execute([$fecha]);
         $res = $stmt->fetch(\PDO::FETCH_ASSOC);
-        
+
         return $res ? $res['total'] : 0;
     }
 }

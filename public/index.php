@@ -110,14 +110,53 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
         $router->get('/carga-masiva', "$controllers\AdminController@vistaCargaMasiva");
         $router->post('/carga-masiva/procesar', "$controllers\AdminController@procesarCarga");
     });
+
+    // ---------------------------------------------------
+    // 4. MÓDULO PERSONAS (¡AQUÍ ES EL LUGAR CORRECTO!)
+    // ---------------------------------------------------
+    // Al estar dentro del mount '/dashboard', la URL final será: /dashboard/personas
+    $router->mount('/personas', function () use ($router, $controllers) {
+
+        // Listado principal
+        $router->get('/', "$controllers\PersonasController@index");
+
+        // Crear
+        $router->get('/crear', "$controllers\PersonasController@create");
+        $router->post('/guardar', "$controllers\PersonasController@store");
+
+        // Editar
+        $router->get('/editar/{id}', "$controllers\PersonasController@edit");
+        $router->post('/actualizar/{id}', "$controllers\PersonasController@update");
+        // Eliminar
+        $router->get('/eliminar/{id}', "$controllers\PersonasController@delete");
+    });
+
+    
+
+
 });
+// =======================================================
+    // 5. MÓDULO MI PERFIL (Ruta Protegida Independiente)
+    // =======================================================
+    $router->mount('/perfil', function () use ($router, $controllers, $middleware) {
+        // 1. Proteger la ruta (Nadie entra sin login)
+        $router->before('GET|POST', '/.*', "$middleware\SessionMiddleware@handle");
+
+        // 2. Rutas
+        $router->get('/', "$controllers\PerfilController@index");       // Ver perfil
+        $router->post('/actualizar', "$controllers\PerfilController@update"); // Guardar cambios
+    });
+
+
+
+
 
 // =======================================================
 // ERROR 404
 // =======================================================
 $router->set404(function () {
     header('HTTP/1.1 404 Not Found');
-    echo '<h1>404 - Página no encontrada</h1><p>Verifica la URL ingresada.</p>';
+    echo '<h1>404 - Página no encontrada </h1><p>Verifica la URL ingresada.</p>';
 });
 
 // Ejecutar Router

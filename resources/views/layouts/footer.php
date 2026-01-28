@@ -11,5 +11,20 @@
         document.querySelector('.sidebar').classList.toggle('active');
     });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const content = document.querySelector('.content');
+
+    if (toggle && sidebar && content) {
+        toggle.addEventListener('click', function () {
+            sidebar.classList.toggle('closed');
+            content.classList.toggle('full');
+        });
+    }
+});
+</script>
+
 </body>
 </html>

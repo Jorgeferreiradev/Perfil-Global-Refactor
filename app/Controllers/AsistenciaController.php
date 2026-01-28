@@ -104,7 +104,7 @@ class AsistenciaController {
 public function guardarManual() {
         // 1. Recogida básica
         $token = $_POST['token'];
-        $idTipo = (int) $_POST['id_tipo'];
+        $idTipo = (int) ($_POST['id_tipo'] ?? 5);
 
         // 2. SANITIZACIÓN AGRESIVA (Data Hygiene)
         // Eliminamos espacios al inicio/final y dobles espacios internos

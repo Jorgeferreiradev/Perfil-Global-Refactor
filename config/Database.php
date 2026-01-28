@@ -1,5 +1,5 @@
 <?php
-namespace Config;
+namespace  Config;
 
 use PDO;
 use PDOException;
