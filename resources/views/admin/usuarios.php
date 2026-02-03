@@ -42,43 +42,45 @@
                             </td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach($usuarios as $usr): ?>
-                        <tr>
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                        <span class="fw-bold"><?= strtoupper(substr($usr['nombres'], 0, 1)) ?></span>
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold text-dark"><?= htmlspecialchars($usr['nombres'] . ' ' . $usr['apellidos']) ?></div>
-                                        <div class="small text-muted"><?= htmlspecialchars($usr['correo']) ?></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <?php if($usr['rol'] === 'admin'): ?>
-                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 rounded-pill">ADMIN</span>
-                                <?php else: ?>
-                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 rounded-pill">MONITOR</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <span class="badge bg-success bg-opacity-10 text-success"><i class="fas fa-circle small me-1"></i> Activo</span>
-                            </td>
-                            <td class="text-end pe-4">
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-secondary" title="Editar (Próximamente)" disabled>
-                                        <i class="fas fa-pen"></i>
-                                    </button>
-                                    <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/eliminar/<?= $usr['id'] ?>" 
-                                       class="btn btn-sm btn-outline-danger"
-                                       onclick="return confirm('¿Estás SEGURO de revocar acceso a este usuario?\n\nEsta acción no se puede deshacer fácilmente.');">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
+                        <tbody>
+                            <?php foreach($usuarios as $u): ?>
+                                <?php $esActivo = ($u['deleted_at'] == null); ?>
+                                
+                                <tr class="<?= !$esActivo ? 'table-secondary text-muted' : '' ?>">
+                                    <td><?= $u['id'] ?></td>
+                                    <td>
+                                        <strong><?= $u['nombres'] ?> <?= $u['apellidos'] ?></strong>
+                                        <?php if(!$esActivo): ?>
+                                            <span class="badge bg-danger ms-2">Inactivo</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-success ms-2">Activo</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?= $u['correo'] ?></td>
+                                    <td><?= ucfirst($u['rol']) ?></td>
+                                    <td>
+                                        <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/editar/<?= $u['id'] ?>" class="btn btn-warning btn-sm" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        <?php if($esActivo): ?>
+                                            <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/estado/<?= $u['id'] ?>" 
+                                            class="btn btn-outline-danger btn-sm" 
+                                            onclick="return confirm('¿Seguro que deseas DESACTIVAR a este usuario? No podrá iniciar sesión.')"
+                                            title="Desactivar acceso">
+                                                <i class="fas fa-ban"></i>
+                                            </a>
+                                        <?php else: ?>
+                                            <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/estado/<?= $u['id'] ?>" 
+                                            class="btn btn-outline-success btn-sm" 
+                                            title="Reactivar acceso">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+</tbody>
                     <?php endif; ?>
                 </tbody>
             </table>

@@ -17,8 +17,6 @@ class AdminController {
 
     /**
      * 1. DASHBOARD ADMIN (HOME)
-     * Calculamos los pendientes aquí para que el globo rojo 
-     * aparezca apenas el admin entra.
      */
     public function index() {
         // Inicializar modelo
@@ -33,12 +31,13 @@ class AdminController {
         // Cargar vistas
         require_once __DIR__ . '/../../resources/views/layouts/header.php';
         require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
-        // Si no tienes admin/index.php, puedes redirigir o crear una vista básica
+        
         if (file_exists(__DIR__ . '/../../resources/views/admin/index.php')) {
             require_once __DIR__ . '/../../resources/views/admin/index.php';
         } else {
             echo "<div class='p-5'><h1>Bienvenido al Panel Admin</h1></div>";
         }
+        
         require_once __DIR__ . '/../../resources/views/layouts/footer.php';
     }
 
@@ -55,7 +54,7 @@ class AdminController {
         $_SESSION['pendientes_count'] = count($pendientes);
 
         $title  = "Aprobaciones Pendientes";
-        $active = "pendientes"; // Para resaltar sidebar
+        $active = "pendientes";
 
         require_once __DIR__ . '/../../resources/views/layouts/header.php';
         require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
@@ -67,7 +66,6 @@ class AdminController {
     public function aprobarUsuario($id) {
         $model = new Persona();
         if ($model->aprobar($id)) {
-            // Recalcular contador y actualizar sesión
             $_SESSION['pendientes_count'] = $model->contarPendientes();
             header('Location: ' . BASE_URL . '/dashboard/admin/pendientes?msg=aprobado');
         } else {
@@ -80,7 +78,6 @@ class AdminController {
     public function rechazarUsuario($id) {
         $model = new Persona();
         if ($model->rechazar($id)) {
-            // Recalcular contador y actualizar sesión
             $_SESSION['pendientes_count'] = $model->contarPendientes();
             header('Location: ' . BASE_URL . '/dashboard/admin/pendientes?msg=rechazado');
         } else {
@@ -94,7 +91,7 @@ class AdminController {
      * ===================================================== */
 
     /**
-     * Lista y gestiona usuarios (excepto el admin logueado)
+     * Lista y gestiona usuarios
      */
     public function gestionarUsuarios() {
         $usuarioModel = new Usuario();
@@ -112,7 +109,7 @@ class AdminController {
     }
 
     /**
-     * Guarda un nuevo usuario (admin o monitor)
+     * Guarda un nuevo usuario (CORREGIDO)
      */
     public function guardarUsuario() {
         /* 1. VALIDACIÓN BÁSICA */
@@ -135,7 +132,7 @@ class AdminController {
             'apellidos' => trim($_POST['apellidos'] ?? ''),
             'correo'    => trim($_POST['correo']),
             'password'  => password_hash($_POST['password'], PASSWORD_BCRYPT),
-            'rol'       => $_POST['rol'] // admin | monitor
+            'rol'       => $_POST['rol']
         ];
 
         /* 4. INSERTAR */
@@ -148,18 +145,74 @@ class AdminController {
     }
 
     /**
-     * Eliminación lógica (soft delete) de usuario
+     * Muestra el formulario de edición (AHORA ESTÁ EN SU LUGAR CORRECTO)
      */
-    public function eliminarUsuario($id) {
+    public function editarUsuario($id) {
+        $usuarioModel = new Usuario();
+        $usuario = $usuarioModel->getById($id);
+
+        if (!$usuario) {
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=no_encontrado');
+            exit;
+        }
+
+        $title  = 'Editar Usuario';
+        $active = 'usuarios';
+
+        require_once __DIR__ . '/../../resources/views/layouts/header.php';
+        require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
+        require_once __DIR__ . '/../../resources/views/admin/usuarios_edit.php'; 
+        require_once __DIR__ . '/../../resources/views/layouts/footer.php';
+    }
+
+    /**
+     * Procesa la actualización (AHORA ESTÁ EN SU LUGAR CORRECTO)
+     */
+    public function actualizarUsuario($id) {
+        $usuarioModel = new Usuario();
+
+        // 1. Validar que no exista el correo en OTRO usuario
+        if ($usuarioModel->existsEmailExcept($_POST['correo'], $id)) {
+            $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'El correo ya está en uso por otro usuario.'];
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios/editar/' . $id);
+            exit;
+        }
+
+        // 2. Preparar datos
+        $data = [
+            'nombres'   => trim($_POST['nombres']),
+            'apellidos' => trim($_POST['apellidos']),
+            'correo'    => trim($_POST['correo']),
+            'rol'       => $_POST['rol'],
+            'password'  => !empty($_POST['password']) ? $_POST['password'] : null 
+        ];
+
+        // 3. Actualizar
+        if ($usuarioModel->update($id, $data)) {
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=actualizado');
+        } else {
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=db_error');
+        }
+        exit;
+    }
+
+    /**
+     * Activa o Desactiva un usuario (Toggle)
+     */
+    public function cambiarEstadoUsuario($id) {
         if (!is_numeric($id)) {
             header('HTTP/1.1 400 Bad Request');
             exit;
         }
 
         $usuarioModel = new Usuario();
-        $usuarioModel->softDelete($id);
-
-        header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=eliminado');
+        
+        // Ejecutamos el interruptor
+        if ($usuarioModel->toggleEstado($id)) {
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=estado_cambiado');
+        } else {
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=db_error');
+        }
         exit;
     }
 

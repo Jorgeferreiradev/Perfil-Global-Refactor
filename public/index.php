@@ -99,7 +99,11 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
         // Gestión de Usuarios
         $router->get('/usuarios', "$controllers\AdminController@gestionarUsuarios");
         $router->post('/usuarios/guardar', "$controllers\AdminController@guardarUsuario");
-        $router->get('/usuarios/eliminar/{id}', "$controllers\AdminController@eliminarUsuario");
+        $router->get('/usuarios/editar/{id}', "$controllers\AdminController@editarUsuario");
+        $router->post('/usuarios/actualizar/{id}', "$controllers\AdminController@actualizarUsuario");
+        $router->get('/usuarios/estado/{id}', "$controllers\AdminController@cambiarEstadoUsuario");
+
+
 
         // Aprobaciones Pendientes
         $router->get('/pendientes', "$controllers\AdminController@listaPendientes");

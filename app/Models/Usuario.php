@@ -20,12 +20,26 @@ class Usuario {
 
     public function getAllExcept($currentId) {
         $sql = "SELECT * FROM {$this->table} 
-                WHERE id != :id AND deleted_at IS NULL 
+                WHERE id != :id  
                 ORDER BY id DESC";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':id' => $currentId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    // 2. NUEVO: Función "Interruptor" (Toggle)
+    public function toggleEstado($id) {
+        // Esta consulta mágica revisa: 
+        // Si deleted_at es NULO (está activo) -> Pone la fecha actual (lo desactiva)
+        // Si tiene fecha (está desactivado) -> Pone NULL (lo reactiva)
+        $sql = "UPDATE {$this->table} 
+                SET deleted_at = IF(deleted_at IS NULL, NOW(), NULL) 
+                WHERE id = :id";
+        
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([':id' => $id]);
+    }
+
 
     public function create($data) {
         $sql = "INSERT INTO {$this->table} (nombres, apellidos, correo, password, rol) 
@@ -109,4 +123,55 @@ class Usuario {
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute($params);
     }
+
+    // MÉTODO PARA EL ADMIN: Actualizar usuario completo
+    public function update($id, $data) {
+        // Construimos la SQL dinámica dependiendo si hay contraseña nueva o no
+        if (!empty($data['password'])) {
+            $sql = "UPDATE {$this->table} SET 
+                    nombres = :nom, 
+                    apellidos = :ape, 
+                    correo = :cor, 
+                    rol = :rol,
+                    password = :pass
+                    WHERE id = :id";
+            
+            $params = [
+                ':nom'  => $data['nombres'],
+                ':ape'  => $data['apellidos'],
+                ':cor'  => $data['correo'],
+                ':rol'  => $data['rol'],
+                ':pass' => password_hash($data['password'], PASSWORD_BCRYPT),
+                ':id'   => $id
+            ];
+        } else {
+            // Si no mandó password, no lo tocamos
+            $sql = "UPDATE {$this->table} SET 
+                    nombres = :nom, 
+                    apellidos = :ape, 
+                    correo = :cor, 
+                    rol = :rol
+                    WHERE id = :id";
+            
+            $params = [
+                ':nom'  => $data['nombres'],
+                ':ape'  => $data['apellidos'],
+                ':cor'  => $data['correo'],
+                ':rol'  => $data['rol'],
+                ':id'   => $id
+            ];
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($params);
+    }
+    
+    // Validar duplicado de correo EXCLUYENDO al usuario actual (para edición)
+    public function existsEmailExcept($correo, $id) {
+        $sql = "SELECT id FROM {$this->table} WHERE correo = :cor AND id != :id LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':cor' => $correo, ':id' => $id]);
+        return $stmt->fetch();
+    }
+
 }
