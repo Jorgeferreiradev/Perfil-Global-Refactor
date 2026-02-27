@@ -174,4 +174,46 @@ class Usuario {
         return $stmt->fetch();
     }
 
+    /* ==========================================
+       MÉTODOS DE RECUPERACIÓN DE CONTRASEÑA
+       (Pégalos al final de app/Models/Usuario.php)
+    ========================================== */
+
+    // 1. Guardar el token y la fecha de expiración
+    public function saveResetToken($id, $token, $expires) {
+        $sql = "UPDATE {$this->table} 
+                SET reset_token = :token, reset_expires = :exp 
+                WHERE id = :id";
+        
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            ':token' => $token, 
+            ':exp' => $expires, 
+            ':id' => $id
+        ]);
+    }
+
+    // 2. Buscar usuario por el token (EL QUE TE FALTABA)
+    public function getByToken($token) {
+        // Buscamos al usuario que tenga ese token EXACTO
+        $sql = "SELECT * FROM {$this->table} 
+                WHERE reset_token = :token 
+                LIMIT 1";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':token' => $token]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // 3. Limpiar el token después de usarlo (para que no se use dos veces)
+    public function clearResetToken($id) {
+        $sql = "UPDATE {$this->table} 
+                SET reset_token = NULL, reset_expires = NULL 
+                WHERE id = :id";
+        
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([':id' => $id]);
+    }
+
+
 }

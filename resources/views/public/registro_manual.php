@@ -56,8 +56,8 @@
                     <input type="hidden" name="documento" value="<?= $documento ?>">
 
                     <div class="row g-2 mb-3">
-                        <div>class="col-6">
-                            <label class="form-label small fw-bold">Tipo Doc.</label>
+                            <div class="col-6">
+                            <label class="form-label small fw-bold">Tipo Documento</label>
                             <select name="tipo_documento" class="form-select" required>
                                 <option value="CC">Cédula (CC)</option>
                                 <option value="TI">Tarjeta Identidad</option>
@@ -66,16 +66,16 @@
                                 <option value="PASAPORTE">Pasaporte</option>
                             </select>
                         </div>
-
-                        <div class="col-6">
+                            
+                        <hr><div class="col-6">
                             <label class="form-label small fw-bold">Nombres</label>
                             <input type="text" name="nombres" class="form-control" required 
-                                   style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                                style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
                         </div>
                         <div class="col-6">
                             <label class="form-label small fw-bold">Apellidos</label>
                             <input type="text" name="apellidos" class="form-control" required 
-                                   style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                                style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
                         </div>
                     </div>
 
@@ -95,7 +95,10 @@
                             <option value="3">💼 Administrativo</option>
                         </select>
                     </div>
-
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Celular</label>
+                        <input type="tel" name="celular" class="form-control" placeholder="Ej: 3133860392" required>
+                    </div>
                     <div class="d-grid gap-2 text-center">
                         <small class="text-muted">
                             <i class="fas fa-info-circle me-1"></i>

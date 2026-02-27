@@ -91,7 +91,7 @@
     <div class="col-6 col-md"> <div class="card border-0 shadow-sm text-center py-3 border-bottom border-4 border-info">
             <div class="text-info mb-1"><i class="fas fa-briefcase fa-lg"></i></div>
             <h4 class="fw-bold mb-0"><?= $data['total_administrativos'] ?></h4>
-            <small class="text-muted small text-uppercase fw-bold">Admin.</small>
+            <small class="text-muted small text-uppercase fw-bold">Administrativos</small>
         </div>
     </div>
     <div class="col-6 col-md"> <div class="card border-0 shadow-sm text-center py-3 border-bottom border-4 border-warning">

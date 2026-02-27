@@ -4,7 +4,7 @@ namespace App\Controllers;
 use App\Models\Usuario;
 use App\Models\Persona;      // Modelo para Aprobaciones
 use App\Services\ImportService; // Servicio para Excel
-
+use App\Services\CorreoService;
 /**
  * Controlador de Administración
  * -----------------------------
@@ -142,6 +142,16 @@ class AdminController {
             header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=db_error');
         }
         exit;
+
+        if ($usuarioModel->create($data)) {
+        
+        // ENVIAR CORREO
+        $mailer = new CorreoService();
+        $mailer->enviarCredenciales($data['correo'], $data['nombres'], $_POST['password']);
+        
+        header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=creado_y_notificado');
+        }
+
     }
 
     /**
@@ -194,25 +204,59 @@ class AdminController {
             header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=db_error');
         }
         exit;
+
+        if ($usuarioModel->create($data)) {
+        
+        // ENVIAR CORREO
+        $mailer = new CorreoService();
+        $mailer->enviarCredenciales($data['correo'], $data['nombres'], $_POST['password']);
+        
+        header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=creado_y_notificado');
+        }
     }
 
     /**
      * Activa o Desactiva un usuario (Toggle)
      */
-    public function cambiarEstadoUsuario($id) {
+public function cambiarEstadoUsuario($id) {
         if (!is_numeric($id)) {
             header('HTTP/1.1 400 Bad Request');
             exit;
         }
 
+        // 1. OBTENER INFORMACIÓN DEL OBJETIVO
         $usuarioModel = new Usuario();
-        
-        // Ejecutamos el interruptor
-        if ($usuarioModel->toggleEstado($id)) {
-            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=estado_cambiado');
-        } else {
-            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=db_error');
+        $targetUser = $usuarioModel->getById($id);
+
+        if (!$targetUser) {
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=no_encontrado');
+            exit;
         }
+
+        // 2. CANDADO DE SEGURIDAD (ANTI HARA-KIRI)
+        if ($id == $_SESSION['user_id']) {
+            $_SESSION['flash'] = ['type' => 'danger', 'msg' => '¡No puedes desactivar tu propia cuenta!'];
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios');
+            exit;
+        }
+
+        // 3. CANDADO DE JERARQUÍA (ADMIN NO MATA ADMIN)
+        // Si el usuario objetivo es ADMIN, prohibimos la acción
+        if ($targetUser['rol'] === 'admin') {
+            $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Por seguridad, no puedes desactivar a otro Administrador. Contacta a soporte TI.'];
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios');
+            exit;
+        }
+        
+        // 4. EJECUTAR CAMBIO (Solo si pasó los filtros)
+        if ($usuarioModel->toggleEstado($id)) {
+            $nuevoEstado = ($targetUser['deleted_at'] === null) ? 'desactivado' : 'reactivado';
+            $_SESSION['flash'] = ['type' => 'warning', 'msg' => "Usuario $nuevoEstado correctamente."];
+        } else {
+            $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Error al cambiar estado.'];
+        }
+        
+        header('Location: ' . BASE_URL . '/dashboard/admin/usuarios');
         exit;
     }
 

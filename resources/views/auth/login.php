@@ -37,9 +37,8 @@
     </form>
     
     <div class="text-center mt-3 small">
-        <a href="/auth/forgot-password" class="text-decoration-none">¿Olvidaste tu contraseña?</a>
+        <a href="<?= BASE_URL ?>/auth/forgot-password" class="text-decoration-none">¿Olvidaste tu contraseña?</a>    </div>
     </div>
-</div>
 
 </body>
 </html>

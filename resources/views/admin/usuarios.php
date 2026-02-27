@@ -66,7 +66,7 @@
                                         <?php if($esActivo): ?>
                                             <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/estado/<?= $u['id'] ?>" 
                                             class="btn btn-outline-danger btn-sm" 
-                                            onclick="return confirm('¿Seguro que deseas DESACTIVAR a este usuario? No podrá iniciar sesión.')"
+                                            onclick="return confirm('¿Seguro que deseas DESACTIVAR a este usuario? Luego no podrá iniciar sesión, hasta que decidas activarlo.')"
                                             title="Desactivar acceso">
                                                 <i class="fas fa-ban"></i>
                                             </a>

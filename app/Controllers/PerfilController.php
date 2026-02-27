@@ -13,7 +13,7 @@ class PerfilController {
         $usuario = $modelo->getById($userId);
 
         // Cargamos la vista
-        require_once __DIR__ . '/../../resources/views/auth/perfil.php';
+        require_once __DIR__ . '/../../resources/views/perfil/index.php';
     }
 
     public function update() {
