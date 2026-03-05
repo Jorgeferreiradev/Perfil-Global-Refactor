@@ -1,31 +1,3 @@
-<style>
-:root {
-    --header-height: 56px;
-    --sidebar-width: 260px;
-}
-
-/* Sidebar fijo debajo del header */
-.sidebar {
-    position: fixed;
-    top: var(--header-height);
-    left: 0;
-    width: var(--sidebar-width);
-    height: calc(100vh - var(--header-height));
-    background: #212529;
-    overflow-y: auto;
-    z-index: 900; /* menor que el navbar */
-}
-
-/* Área de contenido */
-.content {
-    margin-left: var(--sidebar-width);
-    padding: 20px;
-    background: #f4f6f9;
-    min-height: calc(100vh - var(--header-height));
-}
-
-</style>
-
 <nav class="sidebar shadow-sm" id="sidebar">
     <div class="py-3 px-3 text-uppercase small fw-bold text-muted">Operación</div>
     
@@ -45,7 +17,7 @@
         <i class="fas fa-user-friends me-3" style="width:20px"></i>  Personas
     </a>
 
-    <?php if ($_SESSION['user_rol'] === 'admin'): ?>
+    <?php if (isset($_SESSION['user_rol']) && $_SESSION['user_rol'] === 'admin'): ?>
         <hr class="my-3 mx-3 border-secondary opacity-25">
         <div class="py-2 px-3 text-uppercase small fw-bold text-danger">Administración</div>
         
@@ -74,4 +46,4 @@
     <?php endif; ?>
 </nav>
 
-<main class="content d-flex flex-column">
+<main class="content d-flex flex-column" id="content">
