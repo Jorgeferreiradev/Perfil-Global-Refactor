@@ -50,6 +50,7 @@ include __DIR__ . '/../layouts/sidebar.php';
                             <th>Documento</th>
                             <th>Rol / Tipo</th>
                             <th>Correo</th>
+                            <th>Teléfono</th>
                             <th>Estado</th>
                             <th class="text-end pe-4">Acciones</th>
                         </tr>
@@ -88,7 +89,12 @@ include __DIR__ . '/../layouts/sidebar.php';
                                     <span class="badge <?= $badgeClass ?> bg-opacity-75"><?= $p['nombre_tipo'] ?></span>
                                 </td>
                                 <td><?= $p['correo_institucional'] ?? '<span class="text-muted">-</span>' ?></td>
+
                                 <td>
+                                    <?= !empty($p['telefono']) ? htmlspecialchars($p['telefono']) : '<span class="text-muted small">Sin registrar</span>' ?>
+                                </td>
+            
+                                    <td>
                                     <?php if ($p['estado_aprobacion'] === 'activo'): ?>
                                         <span class="text-success small"><i class="fas fa-check-circle"></i> Activo</span>
                                     <?php else: ?>

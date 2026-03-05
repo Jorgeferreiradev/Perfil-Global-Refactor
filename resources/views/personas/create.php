@@ -30,11 +30,6 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label">Teléfono / Celular <span class="text-danger">*</span></label>
-                                <input type="text" name="telefono" class="form-control" required>
-                            </div>
-
                             <div class="col-md-4">
                                 <label class="form-label">Tipo Doc.</label>
                                 <select name="tipo_documento" class="form-select">
