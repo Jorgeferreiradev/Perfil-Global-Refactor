@@ -99,16 +99,15 @@ class Persona {
        CREACIÓN
     ===================================================== */
 
-    public function create($data) {
+public function create($data) {
         // Lógica: Si no hay tipo, por defecto 1 (Estudiante)
         $tipo = !empty($data['id_tipo_persona']) ? $data['id_tipo_persona'] : 1; 
 
-        // Agregamos el campo 'telefono' aquí
         $sql = "INSERT INTO personas (tipo_documento, numero_documento, nombres, apellidos, correo_institucional, telefono, id_tipo_persona, estado_aprobacion) 
                 VALUES (:td, :nd, :nom, :ape, :email, :tel, :tipo, 'activo')";
         
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([
+        $stmt->execute([
             ':td' => $data['tipo_documento'],
             ':nd' => $data['numero_documento'],
             ':nom' => $data['nombres'],
@@ -117,6 +116,9 @@ class Persona {
             ':tel' => $data['telefono'] ?? null,
             ':tipo' => $tipo
         ]);
+
+        // 🔥 EL GRAN FIX: Ahora devolvemos el ID de la persona recién creada, no un booleano
+        return $this->pdo->lastInsertId();
     }
 
     // ✅ TU MÉTODO PERSONALIZADO (RESTAURADO)

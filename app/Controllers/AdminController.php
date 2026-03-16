@@ -299,22 +299,37 @@ public function cambiarEstadoUsuario($id) {
         $servicio  = new ImportService();
         $resultado = $servicio->procesarArchivo($_FILES['archivo_excel']['tmp_name']);
 
-        /* 4. ERROR FATAL */
+       /* 4. ERROR FATAL */
         if (isset($resultado['error_fatal'])) {
             $_SESSION['error_carga'] = $resultado['error_fatal'];
             header('Location: ' . BASE_URL . '/dashboard/admin/carga-masiva');
             exit;
         }
 
-        /* 5. ÉXITO */
+        /* 5. ÉXITO Y OBSERVACIONES (DUPLICADOS) */
         $msg = sprintf(
-            'Proceso terminado. Nuevos: %d, Actualizados: %d, Omitidos: %d',
+            'Proceso terminado. Nuevos: %d, Duplicados: %d',
             $resultado['nuevos'],
-            $resultado['actualizados'],
             $resultado['omitidos'] ?? 0
         );
 
-        header('Location: ' . BASE_URL . '/dashboard/admin/carga-masiva?success=' . urlencode($msg));
+        $urlRedireccion = BASE_URL . '/dashboard/admin/carga-masiva?success=' . urlencode($msg);
+
+        // Si el ImportService detectó duplicados o filas vacías, armamos la alerta amarilla
+        if (!empty($resultado['errores'])) {
+            // LÓGICA SENIOR: Los navegadores bloquean URLs muy largas. 
+            // Si hay más de 50 errores, cortamos la lista para que el sistema no colapse.
+            $listaErrores = $resultado['errores'];
+            if (count($listaErrores) > 50) {
+                $listaErrores = array_slice($listaErrores, 0, 50);
+                $listaErrores[] = "...y otros " . (count($resultado['errores']) - 50) . " registros omitidos más.";
+            }
+            
+            // Adjuntamos la lista codificada a la URL para que tu vista la lea en el $_GET['warning']
+            $urlRedireccion .= '&warning=' . urlencode(json_encode($listaErrores));
+        }
+
+        header('Location: ' . $urlRedireccion);
         exit;
-    }
+    }   
 }

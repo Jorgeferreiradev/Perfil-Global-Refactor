@@ -7,7 +7,7 @@
 
 <?php if(isset($_GET['success'])): ?>
     <div class="alert alert-success border-0 border-start border-4 border-success shadow-sm">
-        <h4 class="alert-heading"><i class="fas fa-check-circle me-2"></i>¡Carga Exitosa!</h4>
+        <h4 class="alert-heading"><i class="fas fa-check-circle me-2"></i>¡Carga Procesada!</h4>
         <p class="mb-0"><?= htmlspecialchars($_GET['success']) ?></p>
     </div>
 <?php endif; ?>
