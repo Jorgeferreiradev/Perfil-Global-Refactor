@@ -112,11 +112,15 @@ public function guardarManual() {
         $apellidos = trim(preg_replace('/\s+/', ' ', $_POST['apellidos']));
         $documento = trim($_POST['documento']); // Solo números y sin espacios
         
+        // Atrapamos el celular y el tipo de documento real ---
+        $celular = trim($_POST['celular'] ?? null); 
+        $tipoDoc = $_POST['tipo_documento'] ?? 'CC'; 
+        // -----------------------------------------------------------------
+                
         // VALIDACIÓN SENIOR DE LONGITUD
         if (strlen($documento) < 6 || strlen($documento) > 15) {
             die("Error: El documento debe tener entre 6 y 15 dígitos reales.");
         }
-
 
         // Limpieza de email
         $correoRaw = trim($_POST['correo']);
@@ -131,11 +135,12 @@ public function guardarManual() {
         $estado = ($idTipo === 99) ? 'activo' : 'pendiente';
 
         $datos = [
-            'tipo_doc'  => 'CC', 
+            'tipo_doc'  => $tipoDoc, // Guardamos el tipo de documento real
             'documento' => $documento,
             'nombres'   => strtoupper($nombres), // Convertimos a mayúsculas limpias
             'apellidos' => strtoupper($apellidos),
             'correo'    => $correoLimpio,
+            'celular'  => $celular,
             'id_tipo'   => $idTipo,
             'estado'    => $estado
         ];

@@ -124,9 +124,9 @@ class Persona {
         $sql = "INSERT INTO personas (
                     tipo_documento, numero_documento, 
                     nombres, apellidos, 
-                    correo_institucional, estado_aprobacion
+                    correo_institucional, telefono, estado_aprobacion
                 ) VALUES (
-                    :td, :nd, :nom, :ape, :mail, :estado
+                    :td, :nd, :nom, :ape, :mail, :tel, :estado
                 )";
 
         $stmt = $this->pdo->prepare($sql);
@@ -136,6 +136,7 @@ class Persona {
             ':nom'    => $data['nombres'],
             ':ape'    => $data['apellidos'],
             ':mail'   => $data['correo'],
+            ':tel'    => $data['celular'],
             ':estado' => $data['estado']
         ]);
 
@@ -158,7 +159,7 @@ class Persona {
     }
 
     /* =====================================================
-       ACTUALIZACIÓN
+    ACTUALIZACIÓN
     ===================================================== */
 
     public function update($id, $data) {
