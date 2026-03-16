@@ -199,12 +199,18 @@
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                          <div class="col-md-6">
                                 <label class="form-label fw-bold small text-uppercase text-muted">Programa Responsable</label>
-                                <select class="form-select" name="programa_responsable" required>
-                                    <option value="">Seleccione...</option>
+                                <select class="form-select select-search" name="programa_responsable" required>
+                                    <option value="">Seleccione o busque un programa...</option>
                                     <?php foreach ($programas as $prog): ?>
-                                        <option value="<?= $prog['id_programa'] ?>" <?= ($prog['id_programa'] == 98) ? 'selected' : '' ?>><?= $prog['nombre_programa'] ?></option>
+                                        <?php 
+                                            // LÓGICA SENIOR: Selecciona automáticamente el programa marcado como default en la Base de Datos
+                                            $isDefault = ($prog['es_default'] == 1) ? 'selected' : ''; 
+                                        ?>
+                                        <option value="<?= $prog['id_programa'] ?>" <?= $isDefault ?>>
+                                            <?= htmlspecialchars($prog['nombre_programa']) ?>
+                                        </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -312,7 +318,28 @@
     </div>
 </div>
 
+
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
 <script>
+    // 2. Inicializar los selectores inteligentes
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // Aplica el buscador a todos los selects que tengan la clase 'select-search'
+        document.querySelectorAll('.select-search').forEach((el) => {
+            new TomSelect(el, {
+                create: false, // No permite crear opciones que no existan en la BD
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                },
+                placeholder: "Escriba para buscar..."
+            });
+        });
+
+    });
+
     // AUTO DISMISS ALERTAS
     document.addEventListener("DOMContentLoaded", function() {
         setTimeout(function() {
