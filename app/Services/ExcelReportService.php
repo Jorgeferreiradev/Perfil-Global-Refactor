@@ -23,13 +23,16 @@ class ExcelReportService {
     // ==========================================
     // 📊 REPORTE 1: MATRIZ GENERAL (MAGISTRAL)
     // ==========================================
-    public function generarMatrizSemestral($semestre, $datosPorLinea) {
+    public function generarMatrizSemestral($semestre, $datosPorLinea, $sede = 'Todas') {
         $sheet = $this->sheet;
         $sheet->setTitle("Matriz $semestre");
 
         // 1. TÍTULO GENERAL
         $sheet->mergeCells("A1:I1");
         $sheet->setCellValue('A1', "MATRIZ GENERAL DE BIENESTAR INSTITUCIONAL - SEMESTRE $semestre");
+        $sheet->setCellValue('A2', 'Semestre: ' . $semestre . ' | Sede: ' . strtoupper($sede));
+        // (Opcional) Ponerle negrita a la celda A2 para que destaque
+        $sheet->getStyle('A2')->getFont()->setBold(true);
         $this->estilarTitulo('A1');
         $this->currentRow = 3;
 

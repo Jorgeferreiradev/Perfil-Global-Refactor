@@ -3,7 +3,7 @@ namespace App\Controllers;
 
 use App\Models\Reporte;
 use App\Models\Evento;
-use App\Services\ExcelReportService; // ✅ Importante: Usamos el servicio profesional
+use App\Services\ExcelReportService;
 use App\Services\PdfReportService;
 
 class ReporteController {
@@ -13,10 +13,16 @@ class ReporteController {
         $eventoModel = new Evento();
         $listaEventos = $eventoModel->all(); 
 
-        // Calcular semestre actual para mostrarlo en la vista
+        // Calcular semestre actual para mostrarlo en la vista (Lógica Feb-Jul)
         $mes = date('n');
         $anio = date('Y');
-        $semestreTxt = ($mes <= 6) ? "$anio-I (Ene - Jun)" : "$anio-II (Jul - Dic)";
+        
+        if ($mes >= 2 && $mes <= 7) {
+            $semestreTxt = "$anio-I (Feb - Jul)";
+        } else {
+            $anioReal = ($mes == 1) ? $anio - 1 : $anio;
+            $semestreTxt = "$anioReal-II (Ago - Ene)";
+        }
 
         $title = "Centro de Reportes";
         $active = "reportes";
@@ -28,48 +34,44 @@ class ReporteController {
     }
 
     // =========================================================
-    // REPORTE 1: MATRIZ SEMESTRAL (Usa PhpSpreadsheet)
+    // REPORTE 1: MATRIZ SEMESTRAL (EXCEL)
     // =========================================================
     public function descargarMatriz() {
         $reporteModel = new Reporte();
-        $excelService = new ExcelReportService(); // Instanciamos el servicio de diseño
+        $excelService = new ExcelReportService(); 
 
-        // 1. Calcular Fechas Automáticas del Semestre
+        $sedeFiltro = $_POST['sede'] ?? 'Todas';
+        
         $mes = date('n');
         $anio = date('Y');
         
-        if ($mes <= 6) {
-            $fi = "$anio-01-01"; 
-            $ff = "$anio-06-30"; 
+        // Fechas Febrero-Julio / Agosto-Enero
+        if ($mes >= 2 && $mes <= 7) {
+            $fi = "$anio-02-01"; 
+            $ff = "$anio-07-31"; 
             $sem = "$anio-I";
         } else {
-            $fi = "$anio-07-01"; 
-            $ff = "$anio-12-31"; 
-            $sem = "$anio-II";
+            $anioReal = ($mes == 1) ? $anio - 1 : $anio;
+            $fi = "$anioReal-08-01"; 
+            $ff = ($anioReal + 1) . "-01-31"; 
+            $sem = "$anioReal-II";
         }
 
-        // 2. Estructurar Datos (Empaquetamos todo para enviarlo al Servicio)
         $datosCompletos = [];
-        // Obtenemos las líneas que tienen eventos en este rango de fechas
-        $lineas = $reporteModel->getLineasConEventos($fi, $ff);
+        $lineas = $reporteModel->getLineasConEventos($fi, $ff, $sedeFiltro);
 
         foreach ($lineas as $nombreLinea) {
-            // Para cada línea, guardamos sus eventos y sus totales reales
             $datosCompletos[$nombreLinea] = [
-                'eventos' => $reporteModel->getEventosPorLinea($nombreLinea, $fi, $ff),
-                'reales'  => $reporteModel->getBeneficiariosRealesPorLinea($nombreLinea, $fi, $ff)
+                'eventos' => $reporteModel->getEventosPorLinea($nombreLinea, $fi, $ff, $sedeFiltro),
+                'reales'  => $reporteModel->getBeneficiariosRealesPorLinea($nombreLinea, $fi, $ff, $sedeFiltro)
             ];
         }
 
-        // 3. Generar Excel Real (.xlsx)
-        // Le pasamos el paquete de datos al "Arquitecto" para que lo dibuje
-        $excelService->generarMatrizSemestral($sem, $datosCompletos);
-        
-        // No necesitamos exit aquí porque el servicio ya hace el output y exit
+        $excelService->generarMatrizSemestral($sem, $datosCompletos, $sedeFiltro);
     }
 
     // =========================================================
-    // REPORTE 2: INDIVIDUAL POR EVENTO (Usa PhpSpreadsheet)
+    // REPORTE 2: INDIVIDUAL POR EVENTO (EXCEL)
     // =========================================================
     public function descargarIndividual() {
         $idEvento = $_POST['id_evento'];
@@ -77,74 +79,82 @@ class ReporteController {
         $reporteModel = new Reporte();
         $excelService = new ExcelReportService();
 
-        // 1. Obtener información cruda de la base de datos
         $info = $reporteModel->getInfoEvento($idEvento);
         $asistentes = $reporteModel->getDetalleAsistentes($idEvento);
 
-        // 2. Calcular resumen rápido (Contadores)
+        // 2. Calcular resumen rápido (Contadores exactos)
         $resumen = ['Estudiante' => 0, 'Docente' => 0, 'Administrativo' => 0, 'Egresado' => 0, 'Invitado' => 0];
         
         foreach ($asistentes as $a) {
-            // Buscamos palabras clave en el tipo de vinculación
-            if (strpos($a['tipo_vinculacion'], 'Estudiante') !== false) {
-                $resumen['Estudiante']++;
-            } elseif (strpos($a['tipo_vinculacion'], 'Docente') !== false) {
-                $resumen['Docente']++;
-            } elseif (strpos($a['tipo_vinculacion'], 'Administrativo') !== false) {
-                $resumen['Administrativo']++;
-            } elseif (strpos($a['tipo_vinculacion'], 'Egresado') !== false) {
-                $resumen['Egresado']++;
+            $tipoReal = trim($a['tipo_vinculacion']);
+            
+            // Si el tipo existe exactamente como está escrito arriba, suma. Si no, va a Invitado.
+            if (array_key_exists($tipoReal, $resumen)) {
+                $resumen[$tipoReal]++;
             } else {
                 $resumen['Invitado']++;
             }
         }
 
-        // 3. Generar Excel Real (.xlsx)
         $excelService->generarIndividual($info, $resumen, $asistentes);
     }
 
+    // =========================================================
+    // REPORTE 3: MATRIZ SEMESTRAL (PDF)
+    // =========================================================
     public function descargarMatrizPdf() {
-    $reporteModel = new Reporte();
-    $pdfService = new PdfReportService();
+        $reporteModel = new Reporte();
+        $pdfService = new PdfReportService();
 
-    // (Lógica de fechas igual que en Excel...)
-    $mes = date('n'); $anio = date('Y');
-    if ($mes <= 6) { $fi = "$anio-01-01"; $ff = "$anio-06-30"; $sem = "$anio-I"; } 
-    else { $fi = "$anio-07-01"; $ff = "$anio-12-31"; $sem = "$anio-II"; }
+        $sedeFiltro = $_POST['sede'] ?? 'Todas';
 
-    $datosCompletos = [];
-    $lineas = $reporteModel->getLineasConEventos($fi, $ff);
-    foreach ($lineas as $nombreLinea) {
-        $datosCompletos[$nombreLinea] = [
-            'eventos' => $reporteModel->getEventosPorLinea($nombreLinea, $fi, $ff),
-            'reales'  => $reporteModel->getBeneficiariosRealesPorLinea($nombreLinea, $fi, $ff)
-        ];
+        $mes = date('n'); 
+        $anio = date('Y');
+        
+        if ($mes >= 2 && $mes <= 7) { 
+            $fi = "$anio-02-01"; $ff = "$anio-07-31"; $sem = "$anio-I"; 
+        } else { 
+            $anioReal = ($mes == 1) ? $anio - 1 : $anio;
+            $fi = "$anioReal-08-01"; $ff = ($anioReal + 1) . "-01-31"; $sem = "$anioReal-II"; 
+        }
+
+        $datosCompletos = [];
+        $lineas = $reporteModel->getLineasConEventos($fi, $ff, $sedeFiltro);
+        
+        foreach ($lineas as $nombreLinea) {
+            $datosCompletos[$nombreLinea] = [
+                'eventos' => $reporteModel->getEventosPorLinea($nombreLinea, $fi, $ff, $sedeFiltro),
+                'reales'  => $reporteModel->getBeneficiariosRealesPorLinea($nombreLinea, $fi, $ff, $sedeFiltro)
+            ];
+        }
+
+        $pdfService->generarMatrizSemestral($sem, $datosCompletos, $sedeFiltro);
     }
 
-    $pdfService->generarMatrizSemestral($sem, $datosCompletos);
-}
+    // =========================================================
+    // REPORTE 4: INDIVIDUAL POR EVENTO (PDF)
+    // =========================================================
+    public function descargarIndividualPdf() {
+        $idEvento = $_POST['id_evento'];
+        
+        $reporteModel = new Reporte();
+        $pdfService = new PdfReportService();
 
-public function descargarIndividualPdf() {
-    $idEvento = $_POST['id_evento'];
-    $reporteModel = new Reporte();
-    $pdfService = new PdfReportService();
+        $info = $reporteModel->getInfoEvento($idEvento);
+        $asistentes = $reporteModel->getDetalleAsistentes($idEvento);
+        
+        // 2. Calcular resumen rápido (Contadores exactos)
+        $resumen = ['Estudiante' => 0, 'Docente' => 0, 'Administrativo' => 0, 'Egresado' => 0, 'Invitado' => 0];
+        
+        foreach ($asistentes as $a) {
+            $tipoReal = trim($a['tipo_vinculacion']);
+            if (array_key_exists($tipoReal, $resumen)) {
+                $resumen[$tipoReal]++;
+            } else {
+                $resumen['Invitado']++;
+            }
+        }
 
-    $info = $reporteModel->getInfoEvento($idEvento);
-    $asistentes = $reporteModel->getDetalleAsistentes($idEvento);
-    
-    // (Lógica de resumen igual que Excel...)
-    $resumen = ['Estudiante' => 0, 'Docente' => 0, 'Administrativo' => 0, 'Egresado' => 0, 'Invitado' => 0];
-    foreach ($asistentes as $a) {
-        if (strpos($a['tipo_vinculacion'], 'Estudiante') !== false) $resumen['Estudiante']++;
-        elseif (strpos($a['tipo_vinculacion'], 'Docente') !== false) $resumen['Docente']++;
-        elseif (strpos($a['tipo_vinculacion'], 'Administrativo') !== false) $resumen['Administrativo']++;
-        elseif (strpos($a['tipo_vinculacion'], 'Egresado') !== false) $resumen['Egresado']++;
-        else $resumen['Invitado']++;
+        $pdfService->generarIndividual($info, $resumen, $asistentes);
     }
-
-    $pdfService->generarIndividual($info, $resumen, $asistentes);
-}
-
-
-
 }

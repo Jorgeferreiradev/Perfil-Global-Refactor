@@ -404,11 +404,12 @@ public function cambiarEstadoUsuario($id) {
         }
     }
 
-    /**
-     * HELPER PRIVADO: Usa Regex para entender formatos como "Año 2026 • Semestre I (Ene - Jun)"
+
+    /** se deja un mes de gracia para cierre de bloque semestral.
+     * HELPER PRIVADO: Calcula las nuevas fechas (Feb-Jul y Ago-Ene)
      */
     private function calcularSiguienteSemestre($nombreActual) {
-        // Expresión regular para buscar la palabra Año, atrapar 4 números, luego Semestre y atrapar I o II
+        // Extraemos el año y el número de semestre actual
         if (preg_match('/Año\s+(\d{4})\s*.*Semestre\s+(I{1,2})/ui', $nombreActual, $matches)) {
             $añoActual = (int) $matches[1];
             $semestreActual = strtoupper($matches[2]);
@@ -417,17 +418,19 @@ public function cambiarEstadoUsuario($id) {
         }
 
         if ($semestreActual === 'I') {
+            // Si estamos en I (Feb-Jul), pasamos al II (Ago-Ene)
             $nuevoAño = $añoActual;
             $nuevoSemestre = 'II';
-            $meses = '(Jul - Dic)';
-            $fini = "{$nuevoAño}-07-01";
-            $ffin = "{$nuevoAño}-12-31";
+            $meses = '(Ago - Ene)';
+            $fini = "{$nuevoAño}-08-01";
+            $ffin = ($nuevoAño + 1) . "-01-31"; // Termina en enero del SIGUIENTE año
         } else {
+            // Si estamos en II (Ago-Ene), pasamos al I del próximo año (Feb-Jul)
             $nuevoAño = $añoActual + 1;
             $nuevoSemestre = 'I';
-            $meses = '(Ene - Jun)';
-            $fini = "{$nuevoAño}-01-01";
-            $ffin = "{$nuevoAño}-06-30";
+            $meses = '(Feb - Jul)';
+            $fini = "{$nuevoAño}-02-01";
+            $ffin = "{$nuevoAño}-07-31";
         }
 
         return [

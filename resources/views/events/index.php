@@ -219,6 +219,8 @@
                                 <div class="d-flex gap-3">
                                     <div class="form-check"><input class="form-check-input" type="radio" name="sede" value="Cúcuta" checked><label class="form-check-label">Cúcuta</label></div>
                                     <div class="form-check"><input class="form-check-input" type="radio" name="sede" value="Ocaña"><label class="form-check-label">Ocaña</label></div>
+                                    <div class="form-check"><input class="form-check-input" type="radio" name="sede" value="Virtual"><label class="form-check-label">Virtual</label></div>
+
                                 </div>
                             </div>
                             <div class="col-12"><hr class="text-muted opacity-25"></div>
@@ -287,6 +289,7 @@
                                 <select name="sede" id="edit_sede" class="form-select w-auto">
                                     <option value="Cúcuta">Cúcuta</option>
                                     <option value="Ocaña">Ocaña</option>
+                                    <option value="Virtual">Virtual</option>
                                 </select>
                             </div>
                             <div class="col-12"><hr class="text-muted opacity-25"></div>
