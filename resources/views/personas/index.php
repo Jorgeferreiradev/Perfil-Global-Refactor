@@ -58,7 +58,7 @@ include __DIR__ . '/../layouts/sidebar.php';
                     <tbody>
                         <?php if (empty($personas)): ?>
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
+                                <td colspan="7" class="text-center py-5 text-muted">
                                     <i class="fas fa-user-slash fa-2x mb-3"></i><br>
                                     No se encontraron personas registradas.
                                 </td>
@@ -67,10 +67,23 @@ include __DIR__ . '/../layouts/sidebar.php';
                             <?php foreach ($personas as $p): ?>
                             <tr>
                                 <td class="ps-4">
-                                    <div class="fw-bold"><?= $p['nombres'] ?> <?= $p['apellidos'] ?></div>
-                                    <?php if(isset($p['programa_actual'])): ?>
-                                        <small class="text-muted" style="font-size: 0.8em;"><?= $p['programa_actual'] ?></small>
-                                    <?php endif; ?>
+                                    <div class="fw-bold text-dark">
+                                        <?= htmlspecialchars($p['nombres'] . ' ' . $p['apellidos']) ?>
+                                    </div>
+                                    
+                                    <small class="text-muted d-block mt-1">
+                                        <i class="fas fa-graduation-cap me-1"></i> 
+                                        <?= htmlspecialchars($p['programa_actual'] ?? 'Sin programa asignado') ?>
+                                        
+                                        <?php 
+                                        // Si es Estudiante (id 1) y tiene nivel, pintamos el badge
+                                        if ($p['id_tipo_persona'] == 1 && !empty($p['nivel_actual'])): 
+                                        ?>
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle ms-2" style="font-size: 0.75em; vertical-align: middle;">
+                                                <?= htmlspecialchars($p['nivel_actual']) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </small>
                                 </td>
                                 <td>
                                     <span class="badge bg-light text-dark border"><?= $p['tipo_documento'] ?></span> 
@@ -94,7 +107,7 @@ include __DIR__ . '/../layouts/sidebar.php';
                                     <?= !empty($p['telefono']) ? htmlspecialchars($p['telefono']) : '<span class="text-muted small">Sin registrar</span>' ?>
                                 </td>
             
-                                    <td>
+                                <td>
                                     <?php if ($p['estado_aprobacion'] === 'activo'): ?>
                                         <span class="text-success small"><i class="fas fa-check-circle"></i> Activo</span>
                                     <?php else: ?>

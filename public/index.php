@@ -123,6 +123,11 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
         // Carga masiva
         $router->get('/carga-masiva', "$controllers\AdminController@vistaCargaMasiva");
         $router->post('/carga-masiva/procesar', "$controllers\AdminController@procesarCarga");
+
+        // 🔥 RUTAS: GESTIÓN DE SEMESTRES (ZONA DE PELIGRO)
+        $router->get('/semestre/simular-cierre', "$controllers\AdminController@simularCierreSemestre");
+        $router->get('/semestre/forzar-cierre', "$controllers\AdminController@forzarCierreSemestre");
+        $router->get('/semestre/deshacer-cierre', "$controllers\AdminController@deshacerCierreSemestre");
     });
 
 }); // Fin del mount /dashboard

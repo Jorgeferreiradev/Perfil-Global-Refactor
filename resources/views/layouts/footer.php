@@ -1,7 +1,7 @@
 <footer class="mt-auto pt-3 border-top text-center text-muted small">
     <p>
     &copy; <?= date('Y') ?> | Fundación de Estudios Superiores Comfanorte · FESC |  
-    PerfilGlobal · Plataforma Institucional de Gestión Académica.
+    PerfilGlobal · Plataforma de Eventos Bienestar Institucional.
     </p>
     </footer>
 <main>

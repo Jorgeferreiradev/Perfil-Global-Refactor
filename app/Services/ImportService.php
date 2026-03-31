@@ -82,6 +82,8 @@ class ImportService {
                                                 if (!in_array($nivel, $nivelesValidos)) {
                                                     $nivel = 'Tecnólogo'; // Valor por defecto si escribieron algo raro en el Excel
                                                 }
+                                    // 🔥 NUEVO: Atrapamos el celular (Columna I - Index 8) y le quitamos letras o espacios raros
+                                    $celular   = preg_replace('/[^0-9]/', '', $this->sanitizarTexto($col[8] ?? ''));
 
                                     // Validaciones básicas
                                     if (empty($doc) && empty($nombres)) {
@@ -118,6 +120,7 @@ class ImportService {
                                             'nombres' => $nombres,
                                             'apellidos' => $apellidos,
                                             'correo_institucional' => $correo,
+                                            'telefono' => !empty($celular) ? $celular : null,
                                             'id_tipo_persona' => $idTipoPersona
                                         ]);
                                         $esNuevo = true; // Marcamos que es nuevo, pero AÚN NO SUMAMOS

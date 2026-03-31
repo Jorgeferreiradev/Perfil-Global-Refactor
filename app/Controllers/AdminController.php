@@ -332,4 +332,150 @@ public function cambiarEstadoUsuario($id) {
         header('Location: ' . $urlRedireccion);
         exit;
     }   
+    /* =====================================================
+     * ========== MODO DIOS: GESTIÓN DE SEMESTRES ==========
+     * ===================================================== */
+
+    
+
+    /**
+     * SIMULADOR: Muestra qué pasaría si se cierra el semestre, sin alterar la BD.
+     */
+    public function simularCierreSemestre() {
+        $pdo = \Config\Database::getInstance();
+        try {
+            $stmt = $pdo->query("SELECT * FROM periodos_academicos WHERE estado = 'activo' LIMIT 1");
+            $periodoActual = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$periodoActual) throw new \Exception("No hay un periodo activo para simular.");
+
+            // Calcular el siguiente usando la función auxiliar (Helpers)
+            $nuevoNombre = $this->calcularSiguienteSemestre($periodoActual['nombre_periodo']);
+
+            $mensaje = "🔍 SIMULACIÓN: Si haces clic en Forzar Cierre, el periodo '{$periodoActual['nombre_periodo']}' pasará a Histórico, y se abrirá el nuevo periodo en blanco llamado: '{$nuevoNombre['nombre']}'.";
+            
+            // Enviamos el mensaje como 'warning' o 'info' para que destaque en azul/amarillo
+            header('Location: ' . BASE_URL . '/dashboard/admin?warning=' . urlencode($mensaje));
+            exit;
+        } catch (\Throwable $e) {
+            header('Location: ' . BASE_URL . '/dashboard/admin?error=' . urlencode('Error en simulación: ' . $e->getMessage()));
+            exit;
+        }
+    }
+
+    /**
+     * CIERRE REAL: Fuerza el cierre del semestre actual y abre el siguiente
+     */
+    public function forzarCierreSemestre() {
+        $pdo = \Config\Database::getInstance();
+        try {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->query("SELECT * FROM periodos_academicos WHERE estado = 'activo' LIMIT 1");
+            $periodoActual = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$periodoActual) throw new \Exception("No hay un periodo activo para cerrar.");
+
+            // 1. Cerrar actual
+            $pdo->prepare("UPDATE periodos_academicos SET estado = 'cerrado' WHERE id = ?")
+                ->execute([$periodoActual['id']]);
+
+            // 2. Calcular el siguiente
+            $nuevo = $this->calcularSiguienteSemestre($periodoActual['nombre_periodo']);
+
+            // 3. Crear el nuevo
+            $insertStmt = $pdo->prepare("
+                INSERT INTO periodos_academicos (nombre_periodo, fecha_inicio, fecha_fin, estado) 
+                VALUES (:nom, :fini, :ffin, 'activo')
+            ");
+            $insertStmt->execute([
+                ':nom'  => $nuevo['nombre'],
+                ':fini' => $nuevo['fecha_inicio'],
+                ':ffin' => $nuevo['fecha_fin']
+            ]);
+
+            $pdo->commit();
+            header('Location: ' . BASE_URL . '/dashboard/admin?success=' . urlencode("✅ Semestre cerrado. Nuevo semestre {$nuevo['nombre']} abierto con éxito."));
+            exit;
+        } catch (\Throwable $e) { 
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            header('Location: ' . BASE_URL . '/dashboard/admin?error=' . urlencode('Error CRÍTICO: ' . $e->getMessage()));
+            exit;
+        }
+    }
+
+    /**
+     * HELPER PRIVADO: Usa Regex para entender formatos como "Año 2026 • Semestre I (Ene - Jun)"
+     */
+    private function calcularSiguienteSemestre($nombreActual) {
+        // Expresión regular para buscar la palabra Año, atrapar 4 números, luego Semestre y atrapar I o II
+        if (preg_match('/Año\s+(\d{4})\s*.*Semestre\s+(I{1,2})/ui', $nombreActual, $matches)) {
+            $añoActual = (int) $matches[1];
+            $semestreActual = strtoupper($matches[2]);
+        } else {
+            throw new \Exception("El formato del nombre '{$nombreActual}' no es válido. Debe contener 'Año YYYY' y 'Semestre I' o 'II'.");
+        }
+
+        if ($semestreActual === 'I') {
+            $nuevoAño = $añoActual;
+            $nuevoSemestre = 'II';
+            $meses = '(Jul - Dic)';
+            $fini = "{$nuevoAño}-07-01";
+            $ffin = "{$nuevoAño}-12-31";
+        } else {
+            $nuevoAño = $añoActual + 1;
+            $nuevoSemestre = 'I';
+            $meses = '(Ene - Jun)';
+            $fini = "{$nuevoAño}-01-01";
+            $ffin = "{$nuevoAño}-06-30";
+        }
+
+        return [
+            'nombre' => "Año {$nuevoAño} • Semestre {$nuevoSemestre} {$meses}",
+            'fecha_inicio' => $fini,
+            'fecha_fin' => $ffin
+        ];
+    }
+
+    /**
+     * Revierte el último cierre de semestre (Botón Deshacer)
+     */
+    public function deshacerCierreSemestre() {
+        $pdo = \Config\Database::getInstance();
+        $pdo->beginTransaction();
+
+        try {
+            // 1. Verificar si el periodo actual está vacío
+            $stmtActivo = $pdo->query("SELECT id FROM periodos_academicos WHERE estado = 'activo' LIMIT 1");
+            $periodoActivo = $stmtActivo->fetch(\PDO::FETCH_ASSOC);
+
+            if ($periodoActivo) {
+                $check = $pdo->prepare("SELECT COUNT(*) FROM historial_academico WHERE periodo_id = ?");
+                $check->execute([$periodoActivo['id']]);
+                
+                if ($check->fetchColumn() > 0) {
+                    throw new \Exception("No se puede revertir: Ya hay estudiantes matriculados en este nuevo semestre.");
+                }
+
+                // 2. Borrar el periodo nuevo (porque está vacío)
+                $pdo->prepare("DELETE FROM periodos_academicos WHERE id = ?")->execute([$periodoActivo['id']]);
+            }
+
+            // 3. Reactivar el último periodo cerrado
+            $pdo->query("
+                UPDATE periodos_academicos 
+                SET estado = 'activo' 
+                WHERE estado = 'cerrado' 
+                ORDER BY id DESC LIMIT 1
+            ");
+
+            $pdo->commit();
+            header('Location: ' . BASE_URL . '/dashboard/admin?success=Cierre revertido con éxito');
+
+        } catch (\Exception $e) {
+            $pdo->rollBack();
+            header('Location: ' . BASE_URL . '/dashboard/admin?error=' . urlencode($e->getMessage()));
+        }
+        exit;
+    }
 }

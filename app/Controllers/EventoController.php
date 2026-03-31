@@ -37,16 +37,10 @@ class EventoController {
     /* =======================
        CREAR EVENTO
     ======================= */
+/* =======================
+       CREAR EVENTO (Validación de fecha pasada eliminada)
+    ======================= */
     public function store() {
-        // Validación de fecha pasada
-        $fechaEvento = new DateTime($_POST['fecha_inicio'].' '.$_POST['hora_inicio']);
-        $ahora = new DateTime();
-
-        if ($fechaEvento < $ahora) {
-            header('Location: ' . BASE_URL . '/dashboard/eventos?error=fecha_pasada');
-            exit;
-        }
-
         $data = [
             'nombre_evento'        => trim($_POST['nombre_evento']),
             'id_linea_accion'      => $_POST['linea_accion'],
@@ -68,53 +62,117 @@ class EventoController {
     }
 
     /* =======================
-       EDITAR EVENTO
+       EDITAR EVENTO (Validación de fecha pasada eliminada)
     ======================= */
-
     public function update($id) {
+        $model = new Evento();
+        $eventoActual = $model->getById($id);
 
-    // 1. Obtener evento actual
-    
-    
+        if (!$eventoActual) {
+            header('Location: ' . BASE_URL . '/dashboard/eventos?error=no_existe');
+            exit;
+        }
 
-    $model = new Evento();
-    $eventoActual = $model->getById($id);
+        // 3. Preparar datos (Ya no validamos contra la fecha/hora actual)
+        $data = [
+            'nombre_evento'        => trim($_POST['nombre_evento']),
+            'id_linea_accion'      => $_POST['linea_accion'],
+            'programa_responsable' => $_POST['programa_responsable'],
+            'sede'                 => $_POST['sede'],
+            'fecha_inicio'         => $_POST['fecha_inicio'],
+            'hora_inicio'          => $_POST['hora_inicio'],
+            'fecha_final'          => $_POST['fecha_final'],
+            'hora_final'           => $_POST['hora_final']
+        ];
 
-    if (!$eventoActual) {
-        header('Location: ' . BASE_URL . '/dashboard/eventos?error=no_existe');
+        // 4. Guardar
+        if ($model->update($id, $data)) {
+            header('Location: ' . BASE_URL . '/dashboard/eventos?success=actualizado');
+        } else {
+            header('Location: ' . BASE_URL . '/dashboard/eventos?error=update');
+        }
         exit;
     }
+                            // valida que la fecha/hora del evento no sea pasada al momento de CREAR o EDITAR un evento. Esta validación se ha eliminado para permitir la creación/edición de eventos con fechas pasadas, lo cual puede ser útil para registrar eventos históricos o corregir errores en la fecha sin restricciones.
+                            //
+                            //     public function store() {
+                            //         // Validación de fecha pasada
+                            //         $fechaEvento = new DateTime($_POST['fecha_inicio'].' '.$_POST['hora_inicio']);
+                            //         $ahora = new DateTime();
 
-    // 2. Validar SOLO si cambió la fecha/hora
-    $fechaNueva = new DateTime($_POST['fecha_inicio'] . ' ' . $_POST['hora_inicio']);
-    $fechaActual = new DateTime($eventoActual['fecha_inicio'] . ' ' . $eventoActual['hora_inicio']);
-    $ahora = new DateTime();
+                            //         if ($fechaEvento < $ahora) {
+                            //             header('Location: ' . BASE_URL . '/dashboard/eventos?error=fecha_pasada');
+                            //             exit;
+                            //         }
 
-    if ($fechaNueva != $fechaActual && $fechaNueva < $ahora) {
-        header('Location: ' . BASE_URL . '/dashboard/eventos?error=fecha_pasada');
-        exit;
-    }
+                            //         $data = [
+                            //             'nombre_evento'        => trim($_POST['nombre_evento']),
+                            //             'id_linea_accion'      => $_POST['linea_accion'],
+                            //             'programa_responsable' => $_POST['programa_responsable'],
+                            //             'sede'                 => $_POST['sede'],
+                            //             'fecha_inicio'         => $_POST['fecha_inicio'],
+                            //             'hora_inicio'          => $_POST['hora_inicio'],
+                            //             'fecha_final'          => $_POST['fecha_final'],
+                            //             'hora_final'           => $_POST['hora_final'],
+                            //             'id_periodo'           => (new Periodo())->getActivoId(),
+                            //             'creado_por'           => $_SESSION['user_id']
+                            //         ];
 
-    // 3. Preparar datos
-    $data = [
-        'nombre_evento'        => trim($_POST['nombre_evento']),
-        'id_linea_accion'      => $_POST['linea_accion'],
-        'programa_responsable' => $_POST['programa_responsable'],
-        'sede'                 => $_POST['sede'],
-        'fecha_inicio'         => $_POST['fecha_inicio'],
-        'hora_inicio'          => $_POST['hora_inicio'],
-        'fecha_final'          => $_POST['fecha_final'],
-        'hora_final'           => $_POST['hora_final']
-    ];
+                            //         $model = new Evento();
+                            //         $model->create($data);
 
-    // 4. Guardar
-    if ($model->update($id, $data)) {
-        header('Location: ' . BASE_URL . '/dashboard/eventos?success=actualizado');
-    } else {
-        header('Location: ' . BASE_URL . '/dashboard/eventos?error=update');
-    }
-    exit;
-}
+                            //         header('Location: ' . BASE_URL . '/dashboard/eventos?success=creado');
+                            //         exit;
+                            //     }
+
+                            //     /* =======================
+                            //        EDITAR EVENTO
+                            //     ======================= */
+
+                            //     public function update($id) {
+
+                            //     // 1. Obtener evento actual
+                                
+                                
+
+                            //     $model = new Evento();
+                            //     $eventoActual = $model->getById($id);
+
+                            //     if (!$eventoActual) {
+                            //         header('Location: ' . BASE_URL . '/dashboard/eventos?error=no_existe');
+                            //         exit;
+                            //     }
+
+                            //     // 2. Validar SOLO si cambió la fecha/hora
+                            //     $fechaNueva = new DateTime($_POST['fecha_inicio'] . ' ' . $_POST['hora_inicio']);
+                            //     $fechaActual = new DateTime($eventoActual['fecha_inicio'] . ' ' . $eventoActual['hora_inicio']);
+                            //     $ahora = new DateTime();
+
+                            //     if ($fechaNueva != $fechaActual && $fechaNueva < $ahora) {
+                            //         header('Location: ' . BASE_URL . '/dashboard/eventos?error=fecha_pasada');
+                            //         exit;
+                            //     }
+
+                            //     // 3. Preparar datos
+                            //     $data = [
+                            //         'nombre_evento'        => trim($_POST['nombre_evento']),
+                            //         'id_linea_accion'      => $_POST['linea_accion'],
+                            //         'programa_responsable' => $_POST['programa_responsable'],
+                            //         'sede'                 => $_POST['sede'],
+                            //         'fecha_inicio'         => $_POST['fecha_inicio'],
+                            //         'hora_inicio'          => $_POST['hora_inicio'],
+                            //         'fecha_final'          => $_POST['fecha_final'],
+                            //         'hora_final'           => $_POST['hora_final']
+                            //     ];
+
+                            //     // 4. Guardar
+                            //     if ($model->update($id, $data)) {
+                            //         header('Location: ' . BASE_URL . '/dashboard/eventos?success=actualizado');
+                            //     } else {
+                            //         header('Location: ' . BASE_URL . '/dashboard/eventos?error=update');
+                            //     }
+                            //     exit;
+                            // }
 
 
 /* =======================

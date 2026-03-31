@@ -18,6 +18,10 @@ class Persona {
        CONSULTAS GENERALES (Tus métodos base)
     ===================================================== */
 
+/* =====================================================
+       CONSULTAS GENERALES (Listado y Búsqueda unificados)
+    ===================================================== */
+
     public function getAll() {
         $sql = "SELECT 
                     p.*, 
@@ -25,14 +29,18 @@ class Persona {
                     (
                         SELECT pr.nombre_programa
                         FROM programas pr
-                        INNER JOIN historial_academico ha 
-                            ON ha.id_programa = pr.id_programa
+                        INNER JOIN historial_academico ha ON ha.id_programa = pr.id_programa
                         WHERE ha.persona_id = p.id
-                        LIMIT 1
-                    ) AS programa_actual
+                        ORDER BY ha.id DESC LIMIT 1
+                    ) AS programa_actual,
+                    (
+                        SELECT ha.nivel_formacion
+                        FROM historial_academico ha
+                        WHERE ha.persona_id = p.id
+                        ORDER BY ha.id DESC LIMIT 1
+                    ) AS nivel_actual
                 FROM personas p
-                LEFT JOIN tipos_personas tp 
-                    ON p.id_tipo_persona = tp.id_tipo
+                LEFT JOIN tipos_personas tp ON p.id_tipo_persona = tp.id_tipo
                 WHERE p.deleted_at IS NULL
                 ORDER BY p.apellidos ASC";
 
@@ -40,16 +48,31 @@ class Persona {
     }
 
     public function search($query) {
-        $sql = "SELECT p.*, tp.nombre_tipo
+        $sql = "SELECT 
+                    p.*, 
+                    tp.nombre_tipo,
+                    (
+                        SELECT pr.nombre_programa
+                        FROM programas pr
+                        INNER JOIN historial_academico ha ON ha.id_programa = pr.id_programa
+                        WHERE ha.persona_id = p.id
+                        ORDER BY ha.id DESC LIMIT 1
+                    ) AS programa_actual,
+                    (
+                        SELECT ha.nivel_formacion
+                        FROM historial_academico ha
+                        WHERE ha.persona_id = p.id
+                        ORDER BY ha.id DESC LIMIT 1
+                    ) AS nivel_actual
                 FROM personas p
-                LEFT JOIN tipos_personas tp 
-                    ON p.id_tipo_persona = tp.id_tipo
+                LEFT JOIN tipos_personas tp ON p.id_tipo_persona = tp.id_tipo
                 WHERE p.deleted_at IS NULL
                 AND (
                     p.numero_documento LIKE :q 
                     OR p.nombres LIKE :q 
                     OR p.apellidos LIKE :q
-                )";
+                )
+                ORDER BY p.apellidos ASC";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':q' => "%$query%"]);
