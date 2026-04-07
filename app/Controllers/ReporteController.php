@@ -83,7 +83,7 @@ class ReporteController {
         $asistentes = $reporteModel->getDetalleAsistentes($idEvento);
 
         // 2. Calcular resumen rápido (Contadores exactos)
-        $resumen = ['Estudiante' => 0, 'Docente' => 0, 'Administrativo' => 0, 'Egresado' => 0, 'Invitado' => 0];
+        $resumen = ['Estudiante' => 0, 'Docente' => 0, 'Administrativo' => 0, 'Graduado' => 0, 'Invitado' => 0];
         
         foreach ($asistentes as $a) {
             $tipoReal = trim($a['tipo_vinculacion']);
@@ -144,7 +144,7 @@ class ReporteController {
         $asistentes = $reporteModel->getDetalleAsistentes($idEvento);
         
         // 2. Calcular resumen rápido (Contadores exactos)
-        $resumen = ['Estudiante' => 0, 'Docente' => 0, 'Administrativo' => 0, 'Egresado' => 0, 'Invitado' => 0];
+        $resumen = ['Estudiante' => 0, 'Docente' => 0, 'Administrativo' => 0, 'Graduado' => 0, 'Invitado' => 0];
         
         foreach ($asistentes as $a) {
             $tipoReal = trim($a['tipo_vinculacion']);

@@ -137,7 +137,7 @@ class PdfReportService {
                 <td>{$resumen['Estudiante']}</td>
                 <td>{$resumen['Docente']}</td>
                 <td>{$resumen['Administrativo']}</td>
-                <td>{$resumen['Egresado']}</td>
+                <td>{$resumen['Graduado']}</td>
                 <td>{$resumen['Invitado']}</td>
             </tr>
         </table>";
@@ -170,7 +170,12 @@ class PdfReportService {
         $this->pdf->SetFont('helvetica', '', 9);
         $this->pdf->writeHTML($htmlLista, true, false, true, false, '');
 
-        $this->pdf->Output("Reporte_Evento.pdf", 'D');
+        // Preparar el nombre dinámico del archivo
+        $nombreLimpio = str_replace(' ', '_', strtoupper($info['nombre_evento']));
+        $nombreArchivo = 'Reporte_' . $nombreLimpio . '.pdf';
+        
+        // Forzar la descarga con el nuevo nombre ('D' es de Download)
+        $this->pdf->Output($nombreArchivo, 'D');
         exit;
     }
 }

@@ -123,6 +123,8 @@ class ExcelReportService {
             $sheet->setCellValue("B$row", $val);
             $sheet->getStyle("A$row")->getFont()->setBold(true);
             $sheet->getStyle("A$row:E$row")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            
+            $sheet->getStyle("B$row")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
             $row++;
         }
 
@@ -139,7 +141,7 @@ class ExcelReportService {
         
         $sheet->fromArray([
             $resumen['Estudiante'], $resumen['Docente'], $resumen['Administrativo'], 
-            $resumen['Egresado'], $resumen['Invitado']
+            $resumen['Graduado'], $resumen['Invitado']
         ], NULL, "A$row");
         $sheet->getStyle("A$row:E$row")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 

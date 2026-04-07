@@ -95,7 +95,7 @@ include __DIR__ . '/../layouts/sidebar.php';
                                             'Estudiante' => 'bg-primary',
                                             'Docente' => 'bg-success',
                                             'Administrativo' => 'bg-info',
-                                            'Egresado' => 'bg-warning text-dark'
+                                            'Graduado' => 'bg-warning text-dark'
                                         ];
                                         $badgeClass = $badges[$p['nombre_tipo']] ?? 'bg-secondary';
                                     ?>

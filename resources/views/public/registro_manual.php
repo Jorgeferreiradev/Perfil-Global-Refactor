@@ -90,7 +90,7 @@
                             <option value="" selected disabled>Seleccione una opción...</option>
                             <option value="99" class="fw-bold">🌟 Invitado Externo</option>
                             <option value="1">🎓 Estudiante</option>
-                            <option value="4">🧑‍🎓 Egresado</option>
+                            <option value="4">🧑‍🎓 Graduado</option>
                             <option value="2">👨‍🏫 Docente</option>
                             <option value="3">💼 Administrativo</option>
                         </select>

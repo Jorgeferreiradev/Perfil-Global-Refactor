@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 05-03-2026 a las 05:37:11
+-- Tiempo de generación: 07-04-2026 a las 21:36:37
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -57,7 +57,19 @@ INSERT INTO `asistencias` (`id`, `id_evento`, `persona_id`, `id_periodo`, `fecha
 (14, 12, 82, 1, '2026-02-03 00:03:43', '::1', 0),
 (15, 8, 4, 1, '2026-02-11 15:58:07', '::1', 0),
 (16, 8, 83, 1, '2026-02-27 02:04:51', '::1', 0),
-(17, 8, 85, 1, '2026-03-05 04:35:59', '::1', 0);
+(17, 8, 85, 1, '2026-03-05 04:35:59', '::1', 0),
+(18, 13, 3, 1, '2026-03-15 23:50:24', '::1', 0),
+(19, 13, 85, 1, '2026-03-15 23:51:10', '::1', 0),
+(20, 13, 86, 1, '2026-03-15 23:53:14', '::1', 0),
+(21, 13, 88, 1, '2026-03-16 00:26:24', '::1', 0),
+(22, 14, 80, 1, '2026-03-16 23:21:52', '::1', 0),
+(23, 14, 85, 1, '2026-03-16 23:29:28', '::1', 0),
+(24, 14, 86, 1, '2026-03-16 23:30:57', '::1', 0),
+(25, 14, 3, 1, '2026-03-16 23:31:22', '::1', 0),
+(26, 15, 82, 1, '2026-03-17 02:21:08', '::1', 0),
+(27, 15, 4, 1, '2026-03-31 04:08:31', '::1', 0),
+(28, 15, 169, 1, '2026-03-31 04:08:58', '::1', 0),
+(29, 15, 84, 1, '2026-03-31 04:09:41', '::1', 0);
 
 -- --------------------------------------------------------
 
@@ -77,7 +89,7 @@ CREATE TABLE `eventos` (
   `fecha_final` date NOT NULL,
   `hora_inicio` time NOT NULL,
   `hora_final` time NOT NULL,
-  `sede` enum('Cúcuta','Ocaña') NOT NULL,
+  `sede` enum('Cúcuta','Ocaña','Virtual') NOT NULL DEFAULT 'Cúcuta',
   `programa_responsable` int(11) DEFAULT NULL,
   `tipo_orientacion` varchar(50) DEFAULT 'Académico',
   `modalidad` enum('Presencial','Virtual','Híbrido') DEFAULT 'Presencial',
@@ -102,11 +114,14 @@ INSERT INTO `eventos` (`id_evento`, `nombre_evento`, `token_qr`, `id_linea_accio
 (4, 'segundo evento', 'ca877b0454ab3304', 5, 1, '2026', 'I', '2026-01-20', '2026-01-20', '01:03:00', '02:03:00', 'Cúcuta', NULL, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 1, '2026-01-20 04:03:20', NULL, 'activo'),
 (6, 'TERCER EVENTO', '3eb3c3f3599719ff', 4, 1, '2026', 'I', '2026-01-20', '2026-01-21', '00:29:00', '00:28:00', 'Cúcuta', 27, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 1, '2026-01-20 05:28:35', NULL, 'activo'),
 (7, 'CUARTO EVENTO', 'f023af7d129857d2', 5, 1, '2026', 'I', '2026-01-21', '2026-02-06', '00:30:00', '00:29:00', 'Cúcuta', 30, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 1, '2026-01-21 05:29:32', '2026-02-02 18:17:02', 'inactivo'),
-(8, 'EVENTO CERO', 'b136b870028df99d', 1, 1, '2026', 'I', '2026-02-26', '2026-03-08', '21:03:00', '01:07:00', 'Cúcuta', 18, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 2, '2026-01-21 06:03:31', NULL, 'activo'),
+(8, 'EVENTO CERO', 'b136b870028df99d', 1, 1, '2026', 'I', '2026-02-26', '2026-03-29', '21:03:00', '01:07:00', 'Cúcuta', 18, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 2, '2026-01-21 06:03:31', NULL, 'activo'),
 (9, 'QUINTO EVENTO', '55549ffb717d4ac9', 7, 1, '2026', 'I', '2026-01-24', '2026-02-07', '22:42:00', '22:41:00', 'Cúcuta', 30, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 1, '2026-01-25 03:41:19', NULL, 'activo'),
 (10, 'INDUCCION ESTUDIANTES CÚCUTA', '5d5e8db38c4c381b', 4, 1, '2026', 'I', '2026-02-04', '2026-02-06', '08:01:00', '00:00:00', 'Cúcuta', 27, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 6, '2026-02-02 21:53:44', NULL, 'activo'),
 (11, 'PRUEBA 1.1', '172e3060c22b6618', 7, 1, '2026', 'I', '2026-02-03', '2026-02-05', '01:00:00', '22:00:00', 'Cúcuta', 33, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 7, '2026-02-02 23:37:56', NULL, 'activo'),
-(12, 'PRUEBA 1.2', '98914a9d5f7bf6b2', 4, 1, '2026', 'I', '2026-02-02', '2026-02-02', '19:02:00', '19:05:00', 'Cúcuta', 9, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 7, '2026-02-02 23:53:25', NULL, 'activo');
+(12, 'PRUEBA 1.2', '98914a9d5f7bf6b2', 4, 1, '2026', 'I', '2026-02-02', '2026-02-02', '19:02:00', '19:05:00', 'Cúcuta', 9, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 7, '2026-02-02 23:53:25', NULL, 'activo'),
+(13, 'EVENTO MARZO', '35ddd84776e61bac', 1, 1, '2026', 'I', '2026-03-15', '2026-03-31', '18:42:00', '00:41:00', 'Virtual', 44, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 1, '2026-03-15 23:41:54', NULL, 'activo'),
+(14, 'INDUCCION ESTUDIANTES CÚCUTA', '52ee1680ae6245d0', 1, 1, '2026', 'I', '2026-03-16', '2026-03-17', '18:21:00', '07:20:00', 'Cúcuta', 44, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 6, '2026-03-16 23:20:33', NULL, 'activo'),
+(15, 'RENDELIZADO', 'cc971f4058963538', 2, 1, '2026', 'I', '2026-03-16', '2026-03-31', '21:20:00', '21:35:00', 'Ocaña', 10, 'Académico', 'Presencial', 'Tecnólogo', NULL, 0, 0, 0, 0, 1, '2026-03-17 02:18:38', NULL, 'activo');
 
 -- --------------------------------------------------------
 
@@ -150,7 +165,22 @@ INSERT INTO `historial_academico` (`id`, `persona_id`, `periodo_id`, `id_program
 (43, 79, 1, 99, 1, 4, NULL),
 (44, 82, 1, 99, 1, 1, NULL),
 (45, 83, 1, 99, 1, 1, NULL),
-(46, 85, 1, 99, 1, 1, NULL);
+(46, 85, 1, 99, 1, 1, NULL),
+(47, 86, 1, 99, 1, 4, NULL),
+(48, 88, 1, 99, 1, 2, NULL),
+(115, 155, 1, 6, 1, 1, 'Tecnólogo'),
+(116, 156, 1, 6, 1, 1, 'Tecnólogo'),
+(117, 157, 1, 6, 1, 2, 'Profesional'),
+(118, 158, 1, 99, 1, 3, 'Profesional'),
+(119, 159, 1, 1, 1, 1, 'Profesional'),
+(120, 160, 1, 2, 1, 4, 'Profesional'),
+(121, 161, 1, 6, 1, 1, 'Tecnólogo'),
+(122, 162, 1, 99, 1, 5, 'Tecnólogo'),
+(123, 163, 1, 3, 1, 1, 'Profesional'),
+(124, 165, 1, 15, 1, 1, 'Profesional'),
+(125, 166, 1, 15, 1, 1, 'Profesional'),
+(126, 167, 1, 15, 1, 1, 'Profesional'),
+(127, 169, 1, 5, 1, 1, 'Tecnólogo');
 
 -- --------------------------------------------------------
 
@@ -229,8 +259,8 @@ INSERT INTO `periodos_academicos` (`id`, `nombre_periodo`, `fecha_inicio`, `fech
 
 CREATE TABLE `personas` (
   `id` int(11) NOT NULL,
-  `id_tipo_persona` int(11) NOT NULL DEFAULT 1,
-  `tipo_documento` enum('CC','TI','PPT','PASAPORTE','CE') DEFAULT 'CC',
+  `id_tipo_persona` int(11) DEFAULT NULL,
+  `tipo_documento` enum('CC','TI','PPT','PASAPORTE','CE') DEFAULT NULL,
   `numero_documento` varchar(20) NOT NULL,
   `nombres` varchar(100) NOT NULL,
   `apellidos` varchar(100) NOT NULL,
@@ -249,7 +279,7 @@ INSERT INTO `personas` (`id`, `id_tipo_persona`, `tipo_documento`, `numero_docum
 (4, 1, 'CC', '1090333444', 'Maria Paula', 'Ramirez', 'm.ramirez@fesc.edu.co', NULL, NULL, 'activo'),
 (5, 2, 'CC', '1090555666', 'Carlos Alberto', 'Gomez', 'c.gomez@fesc.edu.co', NULL, NULL, 'activo'),
 (6, 3, 'CC', '1090777888', 'Ana Milena', 'Rojas', 'a.rojas@fesc.edu.co', NULL, NULL, 'activo'),
-(7, 3, 'CC', '1090999000', 'Luis Fernando', 'Castro', 'l.castro@fesc.edu.co', '3124567890', NULL, 'activo'),
+(7, 3, 'CC', '1090999001', 'Luis Fernando', 'Castro', 'l.castro@fesc.edu.co', '3124567890', NULL, 'activo'),
 (8, 4, 'CC', '88222333', 'Diana Marcela', 'Ortega', 'd.ortega@fesc.edu.co', NULL, NULL, 'activo'),
 (9, 4, 'CC', '1091222333', 'Kevin Jose', 'Duarte', 'k.duarte@fesc.edu.co', '3124567890', NULL, 'activo'),
 (10, 5, 'CC', '1091444555', 'Sandra Lucia', 'Peña', 's.pena@fesc.edu.co', NULL, NULL, 'activo'),
@@ -267,10 +297,26 @@ INSERT INTO `personas` (`id`, `id_tipo_persona`, `tipo_documento`, `numero_docum
 (79, 1, 'CC', '1090555444', 'ELVIO', 'LADO', 'el@hotmail.es', NULL, NULL, 'activo'),
 (80, 3, 'CC', '88267882', 'RICARDO ANDRES', 'ALVAFREZ ESPINEL', 'bienestar@fesc.edu.co', '3142135843', '2026-02-02 18:31:50', 'activo'),
 (81, 1, 'CC', '66666', 'TTT', 'TT', 'bienestar@fesc.edu.co', '3333', NULL, 'activo'),
-(82, 1, 'CC', '1090497713', 'CRISTIAN', 'CELISS', 'freddycruder@gmail.com', '3188283292', NULL, 'activo'),
-(83, 1, 'CC', '1004842461', 'WILMAN', 'MORA', 'est_wa_mora@fesc.edu.co', NULL, NULL, 'pendiente'),
+(82, 1, 'CC', '1090497713', 'CRISTIAN ANDRES', 'CELIS CARDENAS', 'freddycruder@gmail.com', '3188283292', NULL, 'activo'),
+(83, 1, 'CC', '1004842461', 'WILMAN', 'MORA', 'est_wa_mora@fesc.edu.co', NULL, NULL, 'activo'),
 (84, 2, 'CC', '1090111111', 'ANGEL', 'UREÑA', 'au@fesc.edu.co', '3124567890', NULL, 'activo'),
-(85, 1, 'CC', '1090501419', 'PEDRO', 'PEREA', 'pp@fesc.edu.co', NULL, NULL, 'pendiente');
+(85, 1, 'CC', '1090501419', 'PEDRO', 'PEREA', 'pp@fesc.edu.co', NULL, NULL, 'activo'),
+(86, 1, 'CC', '1090501420', 'MIKE', 'TOWERS', 'mt@fesc.edu', '3124567890', NULL, 'activo'),
+(88, 1, 'CC', '190501421', 'ELVIS', 'CRESPO', 'ec@fesc.edu.co', '3124475175', '2026-03-16 21:30:12', 'rechazado'),
+(155, 1, 'CC', '1090111229', 'JORGE ANDRES', 'FERREIRA', 'ja.ferreira@fesc.edu.co', NULL, NULL, 'activo'),
+(156, 1, 'CC', '1090333446', 'MARIA PAULA', 'RAMIREZ', 'm.ramirez@fesc.edu.co', NULL, NULL, 'activo'),
+(157, 2, 'TI', '1090555665', 'CARLOS ALBERTO', 'GOMEZ', 'c.gomez@fesc.edu.co', NULL, NULL, 'activo'),
+(158, 3, 'CE', '1090777882', 'ANA MILENA', 'ROJAS', 'a.rojas@fesc.edu.co', NULL, NULL, 'activo'),
+(159, 1, 'CC', '1090999007', 'LUIS FERNANDO', 'CASTRO', 'l.castro@fesc.edu.co', '3188283292', NULL, 'activo'),
+(160, 4, 'PPT', '88222334', 'DIANA MARCELA', 'ORTEGA', 'd.ortega@fesc.edu.co', NULL, NULL, 'activo'),
+(161, 1, 'CC', '1091222332', 'KEVIN JOSE', 'DUARTE', 'k.duarte@fesc.edu.co', NULL, NULL, 'activo'),
+(162, 5, 'CC', '109144457', 'SANDRA LUCIA', 'PEñA', 's.pena@fesc.edu.co', NULL, NULL, 'activo'),
+(163, 1, 'CC', '1091666778', 'RICARDO LEON', 'ORTIZ', 'r.ortiz@fesc.edu.co', NULL, NULL, 'activo'),
+(165, 1, 'CC', '1090385004', 'ROCIO DELPILAR', 'RUBIO VELASQUEZ', '', NULL, NULL, 'activo'),
+(166, 1, 'CC', '1127050761', 'ANYELA YELITZA', 'MEJIA BACCA', '', NULL, NULL, 'activo'),
+(167, 1, 'CC', '1127050762', 'PIERT LUIGUI', 'MEJIA BACCA', '', NULL, NULL, 'activo'),
+(168, 1, 'TI', '97865213', 'CRISTIAN ANDRES', 'CELIS CARDENAS', 'ca@fesc.edu.co', '', NULL, 'activo'),
+(169, 1, 'CC', '1090111777', 'JORGE ANDRES', 'FERREIRA', 'ja@fesc.edu.co', '1234564560', NULL, 'activo');
 
 -- --------------------------------------------------------
 
@@ -334,6 +380,7 @@ INSERT INTO `programas` (`id_programa`, `nombre_programa`, `modalidad`, `deleted
 (41, 'Profesional en Diseño Gráfico Ocaña', 'Presencial', NULL, 0),
 (42, 'Tecnólogo en Gestión Financiera Ocaña', 'Presencial', NULL, 0),
 (43, 'Profesional en Administración Financiera Ocaña', 'Presencial', NULL, 0),
+(44, 'Bienestar Institucional', 'No Aplica', NULL, 1),
 (99, 'Invitado / Sin programa', 'No Aplica', NULL, 0);
 
 -- --------------------------------------------------------
@@ -377,7 +424,7 @@ INSERT INTO `tipos_personas` (`id_tipo`, `nombre_tipo`) VALUES
 (1, 'Estudiante'),
 (2, 'Docente'),
 (3, 'Administrativo'),
-(4, 'Egresado'),
+(4, 'Graduado'),
 (5, 'Invitado');
 
 -- --------------------------------------------------------
@@ -403,9 +450,10 @@ CREATE TABLE `usuarios_sistema` (
 --
 
 INSERT INTO `usuarios_sistema` (`id`, `nombres`, `apellidos`, `correo`, `password`, `rol`, `deleted_at`, `reset_token`, `reset_expires`) VALUES
-(1, 'Jorge', 'Ferreira', 'ja.ferreira@fesc.edu.co', '$2y$10$b88I0cuWjdDb0xNfVDGjWekqzwTp2fKAiZ1zXBms.TtyDntqL5hFi', 'admin', NULL, '830d1bcc78578a3ed9e6432ddc790ef45bb0289b', '2026-02-02 23:46:40'),
+(1, 'Jorge', 'Ferreira', 'ja.ferreira@fesc.edu.co', '$2y$10$b88I0cuWjdDb0xNfVDGjWekqzwTp2fKAiZ1zXBms.TtyDntqL5hFi', 'admin', NULL, 'df7f03ddaf644576eddc9c84ceb0fe4121fa460b', '2026-03-30 23:45:49'),
 (4, 'Arly', 'Ferreira Figueroa', 'Arly.ferreira@fesc.edu.co', '$2y$10$hpj5o6vOK2YE4ustHWgO9uhyy2FxClCoCxGfI7nlAhI0xci6mvSz.', 'monitor', NULL, NULL, NULL),
-(6, 'ANDRES', 'ALVAREZ', 'bienestar@fesc.edu.co', '$2y$10$vP/C0M.8.Px8xcMq2vRqa.ppv5syPdBOR/warwRKzOHvXmlsTZyei', 'admin', NULL, NULL, NULL);
+(6, 'ANDRES', 'ALVAREZ', 'bienestar@fesc.edu.co', '$2y$10$e1oe3pPjyvT3XTmDieHKretGePWml8jDxKaG.5w6YyEYN48fT.CyC', 'admin', NULL, NULL, NULL),
+(8, 'Julian', 'Ferreira', 'JF@fesc.edu.co', '$2y$10$izwaF/KBOiTehVF2tNH9Rea0WTlqcySJMlJg0bPqIh.fDY8QxOAHq', 'admin', NULL, NULL, NULL);
 
 --
 -- Índices para tablas volcadas
@@ -500,19 +548,19 @@ ALTER TABLE `usuarios_sistema`
 -- AUTO_INCREMENT de la tabla `asistencias`
 --
 ALTER TABLE `asistencias`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT de la tabla `eventos`
 --
 ALTER TABLE `eventos`
-  MODIFY `id_evento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id_evento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de la tabla `historial_academico`
 --
 ALTER TABLE `historial_academico`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=128;
 
 --
 -- AUTO_INCREMENT de la tabla `lineas_accion`
@@ -530,13 +578,13 @@ ALTER TABLE `logs_sistema`
 -- AUTO_INCREMENT de la tabla `periodos_academicos`
 --
 ALTER TABLE `periodos_academicos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `personas`
 --
 ALTER TABLE `personas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=170;
 
 --
 -- AUTO_INCREMENT de la tabla `programas`
@@ -554,7 +602,7 @@ ALTER TABLE `tipos_personas`
 -- AUTO_INCREMENT de la tabla `usuarios_sistema`
 --
 ALTER TABLE `usuarios_sistema`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- Restricciones para tablas volcadas

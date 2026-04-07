@@ -69,7 +69,7 @@ class DashboardController {
             'total_estudiantes'     => $tipos['Estudiante'] ?? 0,
             'total_docentes'        => $tipos['Docente'] ?? 0,
             'total_administrativos' => $tipos['Administrativo'] ?? 0,
-            'total_egresados'       => $tipos['Egresado'] ?? 0,
+            'total_graduados'       => $tipos['Graduado'] ?? 0,
             'total_invitados'       => ($tipos['Invitado'] ?? 0) + ($tipos['Externo'] ?? 0),
 
             // Admin
