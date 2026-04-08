@@ -42,6 +42,10 @@
         <a href="<?= BASE_URL ?>/dashboard/admin/carga-masiva" class="<?= ($active == 'carga-masiva') ? 'active' : '' ?>">
             <i class="fas fa-cloud-upload-alt me-3" style="width:20px"></i> Carga Masiva
         </a>
+
+            <a href="<?= BASE_URL ?>/dashboard/admin/semestres" class="<?= (isset($active) && $active == 'semestres') ? 'active' : '' ?>">
+                <i class="fas fa-calendar-alt me-3" style="width:20px"></i> Gestión Semestral
+            </a>
         
     <?php endif; ?>
 </nav>

@@ -135,23 +135,21 @@ class AdminController {
             'rol'       => $_POST['rol']
         ];
 
-        /* 4. INSERTAR */
+        /* 4. INSERTAR Y NOTIFICAR */
         if ($usuarioModel->create($data)) {
-            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=creado');
+            // Enviar correo ANTES de redirigir
+            try {
+                $mailer = new CorreoService();
+                $mailer->enviarCredenciales($data['correo'], $data['nombres'], $_POST['password']);
+                header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=creado_y_notificado');
+            } catch (\Exception $e) {
+                // Si el correo falla pero el usuario se creó, avisamos
+                header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?warning=creado_pero_correo_fallo');
+            }
         } else {
             header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=db_error');
         }
         exit;
-
-        if ($usuarioModel->create($data)) {
-        
-        // ENVIAR CORREO
-        $mailer = new CorreoService();
-        $mailer->enviarCredenciales($data['correo'], $data['nombres'], $_POST['password']);
-        
-        header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=creado_y_notificado');
-        }
-
     }
 
     /**
@@ -199,20 +197,13 @@ class AdminController {
 
         // 3. Actualizar
         if ($usuarioModel->update($id, $data)) {
+            // Nota: Usualmente no se envía contraseña por correo al actualizar a menos que lo pidas, 
+            // lo dejamos simple por seguridad.
             header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=actualizado');
         } else {
             header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=db_error');
         }
         exit;
-
-        if ($usuarioModel->create($data)) {
-        
-        // ENVIAR CORREO
-        $mailer = new CorreoService();
-        $mailer->enviarCredenciales($data['correo'], $data['nombres'], $_POST['password']);
-        
-        header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=creado_y_notificado');
-        }
     }
 
     /**
@@ -338,27 +329,49 @@ public function cambiarEstadoUsuario($id) {
 
     
 
-    /**
-     * SIMULADOR: Muestra qué pasaría si se cierra el semestre, sin alterar la BD.
+   /**
+     * SIMULADOR (MODO API): Calcula el impacto y devuelve JSON para el Modal
      */
     public function simularCierreSemestre() {
+        header('Content-Type: application/json'); // Respondemos en formato JSON
         $pdo = \Config\Database::getInstance();
+        
         try {
+            // 1. Obtener periodo actual
             $stmt = $pdo->query("SELECT * FROM periodos_academicos WHERE estado = 'activo' LIMIT 1");
             $periodoActual = $stmt->fetch(\PDO::FETCH_ASSOC);
 
             if (!$periodoActual) throw new \Exception("No hay un periodo activo para simular.");
+            $idPeriodo = $periodoActual['id'];
 
-            // Calcular el siguiente usando la función auxiliar (Helpers)
+            // 2. Contar la historia (Eventos, Asistencias y Estudiantes del periodo)
+            $totalEventos = $pdo->query("SELECT COUNT(*) FROM eventos WHERE id_periodo = $idPeriodo")->fetchColumn();
+            $totalEstudiantes = $pdo->query("SELECT COUNT(*) FROM historial_academico WHERE periodo_id = $idPeriodo")->fetchColumn();
+            
+            // Asistencias unidas a los eventos de este periodo
+            $totalAsist = $pdo->query("SELECT COUNT(*) FROM asistencias a INNER JOIN eventos e ON a.id_evento = e.id_evento WHERE e.id_periodo = $idPeriodo")->fetchColumn();
+
+            // 3. Contar Pendientes de Aprobación
+            $personaModel = new \App\Models\Persona();
+            $pendientes = $personaModel->contarPendientes();
+
+            // 4. Calcular el futuro
             $nuevoNombre = $this->calcularSiguienteSemestre($periodoActual['nombre_periodo']);
 
-            $mensaje = "🔍 SIMULACIÓN: Si haces clic en Forzar Cierre, el periodo '{$periodoActual['nombre_periodo']}' pasará a Histórico, y se abrirá el nuevo periodo en blanco llamado: '{$nuevoNombre['nombre']}'.";
-            
-            // Enviamos el mensaje como 'warning' o 'info' para que destaque en azul/amarillo
-            header('Location: ' . BASE_URL . '/dashboard/admin?warning=' . urlencode($mensaje));
+            // Devolver todo el paquete al Frontend
+            echo json_encode([
+                'success' => true,
+                'semestre_actual' => $periodoActual['nombre_periodo'],
+                'semestre_nuevo'  => $nuevoNombre['nombre'],
+                'eventos'         => $totalEventos,
+                'asistencias'     => $totalAsist,
+                'estudiantes'     => $totalEstudiantes,
+                'pendientes'      => $pendientes
+            ]);
             exit;
+
         } catch (\Throwable $e) {
-            header('Location: ' . BASE_URL . '/dashboard/admin?error=' . urlencode('Error en simulación: ' . $e->getMessage()));
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
             exit;
         }
     }
@@ -395,13 +408,23 @@ public function cambiarEstadoUsuario($id) {
             ]);
 
             $pdo->commit();
-            header('Location: ' . BASE_URL . '/dashboard/admin?success=' . urlencode("✅ Semestre cerrado. Nuevo semestre {$nuevo['nombre']} abierto con éxito."));
+            header('Location: ' . BASE_URL . '/dashboard/admin/semestres?success=' . urlencode("✅ Semestre cerrado. Nuevo semestre {$nuevo['nombre']} abierto con éxito."));
             exit;
         } catch (\Throwable $e) { 
             if ($pdo->inTransaction()) $pdo->rollBack();
-            header('Location: ' . BASE_URL . '/dashboard/admin?error=' . urlencode('Error CRÍTICO: ' . $e->getMessage()));
+            header('Location: ' . BASE_URL . '/dashboard/admin/semestres?error=' . urlencode('Error CRÍTICO: ' . $e->getMessage()));
             exit;
         }
+    }
+
+    public function semestres() {
+        $title = "Gestión Semestral";
+        $active = "semestres"; // Para que el menú lateral se ilumine
+        
+        require_once __DIR__ . '/../../resources/views/layouts/header.php';
+        require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
+        require_once __DIR__ . '/../../resources/views/admin/semestres.php';
+        require_once __DIR__ . '/../../resources/views/layouts/footer.php';
     }
 
 
@@ -473,11 +496,11 @@ public function cambiarEstadoUsuario($id) {
             ");
 
             $pdo->commit();
-            header('Location: ' . BASE_URL . '/dashboard/admin?success=Cierre revertido con éxito');
+            header('Location: ' . BASE_URL . '/dashboard/admin/semestres?success=Cierre revertido con éxito');
 
         } catch (\Exception $e) {
             $pdo->rollBack();
-            header('Location: ' . BASE_URL . '/dashboard/admin?error=' . urlencode($e->getMessage()));
+            header('Location: ' . BASE_URL . '/dashboard/admin/semestres?error=' . urlencode($e->getMessage()));
         }
         exit;
     }

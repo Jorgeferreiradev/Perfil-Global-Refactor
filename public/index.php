@@ -38,24 +38,16 @@ $router->post('/auth/login', "$controllers\AuthController@login");
 $router->get('/logout', "$controllers\AuthController@logout");
 
 // 2. Recuperación de Contraseña (Flujo Completo)
-// A. Pedir correo ("Olvidé mi contraseña")
 $router->get('/auth/forgot-password', "$controllers\AuthController@showForgotPassword");
-// B. Procesar envío del link al correo
 $router->post('/auth/recovery', "$controllers\AuthController@sendRecoveryLink");
-// C. Clic en el link del correo (Validar Token)
 $router->get('/auth/reset-password/(\w+)', "$controllers\AuthController@showResetPassword");
-// D. Guardar la nueva contraseña
 $router->post('/auth/update-password', "$controllers\AuthController@updatePassword");
 
 // 3. Asistencia Pública
-// A. Rutas Específicas
 $router->get('/asistencia/nuevo/{token}/{documento}', "$controllers\AsistenciaController@vistaRegistroManual");
 $router->post('/asistencia/guardar-manual', "$controllers\AsistenciaController@guardarManual");
 $router->post('/asistencia/registrar', "$controllers\AsistenciaController@registrar");
-
-// B. Ruta Genérica (Token)
 $router->get('/asistencia/{token}', "$controllers\AsistenciaController@vistaRegistro");
-
 
 // =======================================================
 // B. RUTAS PROTEGIDAS (DASHBOARD)
@@ -103,7 +95,7 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
             (new \App\Middleware\RoleMiddleware())->handle('admin');
         });
 
-        // Home admin
+        // Home admin (Carga masiva)
         $router->get('/', "$controllers\AdminController@index");
 
         // Gestión de Usuarios
@@ -111,8 +103,6 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
         $router->post('/usuarios/guardar', "$controllers\AdminController@guardarUsuario");
         $router->get('/usuarios/editar/{id}', "$controllers\AdminController@editarUsuario");
         $router->post('/usuarios/actualizar/{id}', "$controllers\AdminController@actualizarUsuario");
-        
-        // ACTIVAR / DESACTIVAR USUARIO (La ruta que te fallaba)
         $router->get('/usuarios/estado/{id}', "$controllers\AdminController@cambiarEstadoUsuario");
 
         // Aprobaciones Pendientes
@@ -124,36 +114,31 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
         $router->get('/carga-masiva', "$controllers\AdminController@vistaCargaMasiva");
         $router->post('/carga-masiva/procesar', "$controllers\AdminController@procesarCarga");
 
-        // 🔥 RUTAS: GESTIÓN DE SEMESTRES (ZONA DE PELIGRO)
-        $router->get('/semestre/simular-cierre', "$controllers\AdminController@simularCierreSemestre");
-        $router->get('/semestre/forzar-cierre', "$controllers\AdminController@forzarCierreSemestre");
-        $router->get('/semestre/deshacer-cierre', "$controllers\AdminController@deshacerCierreSemestre");
+        // 🔥 NUEVO MÓDULO: GESTIÓN DE SEMESTRES
+        $router->get('/semestres', "$controllers\AdminController@semestres");
+        $router->get('/semestres/simular-cierre', "$controllers\AdminController@simularCierreSemestre");
+        $router->get('/semestres/forzar-cierre', "$controllers\AdminController@forzarCierreSemestre");
+        $router->get('/semestres/deshacer-cierre', "$controllers\AdminController@deshacerCierreSemestre");
     });
 
 }); // Fin del mount /dashboard
 
-
 // =======================================================
 // C. MÓDULO MI PERFIL (Ruta Protegida Independiente)
 // =======================================================
-// Lo dejamos fuera del dashboard por si quieres acceder directo a /perfil
 $router->mount('/perfil', function () use ($router, $controllers, $middleware) {
-    
-    // Proteger la ruta (Importante)
     $router->before('GET|POST', '/.*', "$middleware\SessionMiddleware@handle");
-
     $router->get('/', "$controllers\PerfilController@index");
     $router->post('/actualizar', "$controllers\PerfilController@update");
 });
-
 
 // =======================================================
 // ERROR 404
 // =======================================================
 $router->set404(function () {
     header('HTTP/1.1 404 Not Found');
-    echo '<h1>404 - Página no encontrada </h1><p>Verifica la URL ingresada.</p>';
+    echo '<h1>404 - Página no encontrada</h1><p>Verifica la URL ingresada.</p>';
 });
 
-// Ejecutar Router (SIN BARRA INVERTIDA AL FINAL)
+// Ejecutar Router
 $router->run();
