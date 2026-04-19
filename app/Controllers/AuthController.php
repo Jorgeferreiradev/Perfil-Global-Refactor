@@ -60,6 +60,7 @@ class AuthController {
 
     // 2. Procesar el envío del correo (Ruta /auth/recovery)
     public function sendRecoveryLink() {
+       // die("¡Hola! Llegaste al controlador. El formulario sí envió los datos."); // Pon esto
         // Validar que llegó el correo
         $email = filter_input(INPUT_POST, 'correo', FILTER_SANITIZE_EMAIL);
         

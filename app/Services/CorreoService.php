@@ -5,63 +5,45 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 class CorreoService {
-    
     private $mail;
 
     public function __construct() {
         $this->mail = new PHPMailer(true);
         
+        // --- CONFIGURACIÓN SMTP ---
+        $this->mail->isSMTP();
+        $this->mail->Host       = 'smtp.gmail.com'; // Servidor de Gmail
+        $this->mail->SMTPAuth   = true;
+        // 🔥 IMPORTANTE: Usa variables de entorno (.env) o config.php para esto
+        $this->mail->Username   = 'perfilglobal.fesc@gmail.com'; 
+        $this->mail->Password   = 'xxif rvcs bkvl vhle'; // No es tu clave normal
+        $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $this->mail->Port       = 587;
+        
+        $this->mail->setFrom('no-reply@perfilglobal.com', 'Perfil Global V2');
+        $this->mail->CharSet = 'UTF-8';
+    }
+
+    public function enviarCredenciales($email, $nombre, $mensajeHtml) {
         try {
-            $this->mail->isSMTP();
-            $this->mail->Host       = 'smtp.gmail.com'; 
-            $this->mail->SMTPAuth   = true;
-            $this->mail->Username   = 'tu_correo@gmail.com'; // ⚠️ PON TU GMAIL AQUÍ
-            $this->mail->Password   = 'las16letrasdegoogle'; // ⚠️ PON LA CLAVE DE 16 LETRAS SIN ESPACIOS
-            $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $this->mail->Port       = 587;
-            
-            $this->mail->setFrom('tu_correo@gmail.com', 'Soporte Perfil Global');
+            $this->mail->addAddress($email, $nombre);
             $this->mail->isHTML(true);
-            $this->mail->CharSet = 'UTF-8';
-        } catch (Exception $e) {
-            // Silencioso en constructor
-        }
-    }
+            $this->mail->Subject = 'Recuperación de Contraseña - Perfil Global';
+            $this->mail->Body    = "
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;'>
+                    <h2 style='color: #0d6efd;'>Hola, $nombre</h2>
+                    <p>Has solicitado restablecer tu contraseña en PerfilGlobal.</p>
+                    <div style='background: #f8f9fa; padding: 15px; border-radius: 5px; text-align: center;'>
+                        $mensajeHtml
+                    </div>
+                    <p style='font-size: 0.8em; color: #777; margin-top: 20px;'>
+                        Si no solicitaste este cambio, puedes ignorar este correo de forma segura.
+                    </p>
+                </div>";
 
-    public function enviarCredenciales($correo, $nombre, $password) {
-        try {
-            $this->mail->addAddress($correo, $nombre);
-            $this->mail->Subject = 'Bienvenido a Perfil Global V2 - Credenciales';
-            $this->mail->Body = "
-                <h1>¡Hola, $nombre!</h1>
-                <p>Se ha creado tu cuenta en el sistema Perfil Global.</p>
-                <ul>
-                    <li>Usuario: $correo</li>
-                    <li>Contraseña: <strong>$password</strong></li>
-                </ul>
-                <a href='" . BASE_URL . "/login'>Iniciar Sesión</a>
-            ";
             return $this->mail->send();
         } catch (Exception $e) {
-            return false;
-        }
-    }
-
-    // 🔥 NUEVO: Método para recuperación de contraseñas
-    public function enviarRecuperacion($correoDestino, $nombre, $token) {
-        try {
-            $this->mail->addAddress($correoDestino, $nombre);
-            $this->mail->Subject = 'Recuperacion de Contraseña - Perfil Global';
-            
-            $enlace = BASE_URL . "/auth/reset-password/" . $token;
-
-            $this->mail->Body = "
-                <h2>Hola, {$nombre}</h2>
-                <p>Has solicitado recuperar tu contraseña. Haz clic en el enlace para crear una nueva (Expira en 1 hora):</p>
-                <a href='{$enlace}' style='padding: 10px 15px; background: #dc3545; color: #fff; text-decoration: none;'>Restablecer Contraseña</a>
-            ";
-            return $this->mail->send();
-        } catch (Exception $e) {
+            error_log("Error de correo: " . $this->mail->ErrorInfo);
             return false;
         }
     }
