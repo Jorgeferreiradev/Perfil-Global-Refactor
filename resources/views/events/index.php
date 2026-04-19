@@ -1,8 +1,11 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-dark"><i class="fas fa-calendar-check me-2 text-primary"></i>Gestión de Eventos</h2>
-    <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearEvento">
-        <i class="fas fa-plus me-2"></i>Nuevo Evento
-    </button>
+    
+    <?php if (isset($_SESSION['periodo_vista_estado']) && $_SESSION['periodo_vista_estado'] === 'activo'): ?>
+        <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearEvento">
+            <i class="fas fa-plus me-2"></i>Nuevo Evento
+        </button>
+    <?php endif; ?>
 </div>
 
 <div id="alert-container">
@@ -70,8 +73,7 @@
 
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+        <div class="table-responsive" style="min-height: 350px;">            <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light text-secondary">
                     <tr>
                         <th class="ps-4">Evento / Línea</th>
@@ -138,32 +140,33 @@
                                             </button>
                                         </li>
                                         
+                                    <?php if (isset($_SESSION['periodo_vista_estado']) && $_SESSION['periodo_vista_estado'] === 'activo'): ?>
+                                            <li><hr class="dropdown-divider"></li>
+                                            
+                                            <li>
+                                                <button class="dropdown-item btn-editar" 
+                                                    data-id="<?= $evt['id_evento'] ?>"
+                                                    data-nombre="<?= $evt['nombre_evento'] ?>"
+                                                    data-linea="<?= $evt['id_linea_accion'] ?>"
+                                                    data-programa="<?= $evt['programa_responsable'] ?>"
+                                                    data-sede="<?= $evt['sede'] ?>"
+                                                    data-fini="<?= $evt['fecha_inicio'] ?>"
+                                                    data-hini="<?= $evt['hora_inicio'] ?>"
+                                                    data-ffin="<?= $evt['fecha_final'] ?>"
+                                                    data-hfin="<?= $evt['hora_final'] ?>"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#modalEditarEvento">
+                                                    <i class="fas fa-edit me-2 text-warning"></i> Editar
+                                                </button>
+                                            </li>
 
-                                        <li><hr class="dropdown-divider"></li>
-                                        
-                                        <li>
-                                            <button class="dropdown-item btn-editar" 
-                                                data-id="<?= $evt['id_evento'] ?>"
-                                                data-nombre="<?= $evt['nombre_evento'] ?>"
-                                                data-linea="<?= $evt['id_linea_accion'] ?>"
-                                                data-programa="<?= $evt['programa_responsable'] ?>"
-                                                data-sede="<?= $evt['sede'] ?>"
-                                                data-fini="<?= $evt['fecha_inicio'] ?>"
-                                                data-hini="<?= $evt['hora_inicio'] ?>"
-                                                data-ffin="<?= $evt['fecha_final'] ?>"
-                                                data-hfin="<?= $evt['hora_final'] ?>"
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#modalEditarEvento">
-                                                <i class="fas fa-edit me-2 text-warning"></i> Editar
-                                            </button>
-                                        </li>
-
-                                        <?php if($isInactive): ?>
-                                            <li><a class="dropdown-item text-success fw-bold" href="<?= BASE_URL ?>/dashboard/eventos/estado/<?= $evt['id_evento'] ?>/activo"><i class="fas fa-check-circle me-2"></i> Reactivar</a></li>
-                                        <?php else: ?>
-                                            <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/dashboard/eventos/estado/<?= $evt['id_evento'] ?>/inactivo" onclick="return confirm('¿Al desactivarlo NO aparecerá en reportes. Continuar?')"><i class="fas fa-ban me-2"></i> Desactivar</a></li>
+                                            <?php if($isInactive): ?>
+                                                <li><a class="dropdown-item text-success fw-bold" href="<?= BASE_URL ?>/dashboard/eventos/estado/<?= $evt['id_evento'] ?>/activo"><i class="fas fa-check-circle me-2"></i> Reactivar</a></li>
+                                            <?php else: ?>
+                                                <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/dashboard/eventos/estado/<?= $evt['id_evento'] ?>/inactivo" onclick="return confirm('¿Al desactivarlo NO aparecerá en reportes. Continuar?')"><i class="fas fa-ban me-2"></i> Desactivar</a></li>
+                                            <?php endif; ?>
                                         <?php endif; ?>
-                                    </ul>
+                                        </ul>
                                 </div>
                             </td>
                         </tr>

@@ -15,8 +15,15 @@ class Evento {
     /* =====================================================
        1. LISTAR EVENTOS (CON FILTROS + SOLO ACTIVOS)
     ===================================================== */
-    public function all($filtros = []) {
+ /* =====================================================
+       1. LISTAR EVENTOS (SOLO DEL SEMESTRE ACTIVO)
+    ===================================================== */
+public function all($filtros = []) {
 
+        // 🔥 FIX SENIOR: Capturamos la sesión con un salvavidas (0) si no existe
+        $idPeriodo = $_SESSION['periodo_vista_id'] ?? 0;
+
+        // ✅ CÓDIGO SENIOR: Inner Join con periodos_academicos y uso de :periodo
         $sql = "SELECT 
                     e.*, 
                     l.nombre_linea, 
@@ -24,9 +31,11 @@ class Evento {
                 FROM eventos e
                 INNER JOIN lineas_accion l ON e.id_linea_accion = l.id
                 LEFT JOIN programas p ON e.programa_responsable = p.id_programa
-               WHERE 1=1";
-
-        $params = [];
+                INNER JOIN periodos_academicos pa ON e.id_periodo = pa.id
+                WHERE e.id_periodo = :periodo AND e.deleted_at IS NULL";
+                
+        // 🔥 FIX SENIOR: Iniciamos el arreglo de parámetros con el periodo blindado
+        $params = [':periodo' => $idPeriodo];
 
         // Filtro por línea
         if (!empty($filtros['linea'])) {
@@ -52,18 +61,16 @@ class Evento {
             $params[':busq'] = '%' . $filtros['busqueda'] . '%';
         }
 
-        $sql .= " ORDER BY e.fecha_inicio DESC";
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-
-        // AGREGAR ESTE NUEVO FILTRO AL FINAL DE LOS IFs
+        // Filtro por estado del evento (activo/inactivo)
         if (isset($filtros['estado']) && $filtros['estado'] !== '') {
              $sql .= " AND e.estado = :estado";
              $params[':estado'] = $filtros['estado'];
         }
 
         $sql .= " ORDER BY e.fecha_inicio DESC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

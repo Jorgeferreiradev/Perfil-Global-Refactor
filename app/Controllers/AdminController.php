@@ -18,20 +18,35 @@ class AdminController {
     /**
      * 1. DASHBOARD ADMIN (HOME)
      */
-    public function index() {
-        // Inicializar modelo
+public function index() {
         $personaModel = new Persona();
-        
-        // Calcular pendientes para el sidebar
         $_SESSION['pendientes_count'] = $personaModel->contarPendientes();
+
+        // ---------------------------------------------------------
+        // 🔥 LÓGICA SENIOR: Detección de Semestre Vencido
+        // ---------------------------------------------------------
+        $pdo = \Config\Database::getInstance();
+        $stmt = $pdo->prepare("SELECT nombre_periodo, fecha_fin FROM periodos_academicos WHERE id = ?");
+        $stmt->execute([$_SESSION['periodo_vista_id']]);
+        $periodoActual = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        $alertaCierre = false;
+        $fechaActual = date('Y-m-d');
+        
+        // Comparamos si hoy es mayor a la fecha de fin estipulada
+        if ($periodoActual && $fechaActual > $periodoActual['fecha_fin']) {
+            $alertaCierre = true;
+            $nombreSemestreVencido = $periodoActual['nombre_periodo'];
+        }
+        // ---------------------------------------------------------
 
         $title = "Panel Administrativo";
         $active = "dashboard";
 
-        // Cargar vistas
         require_once __DIR__ . '/../../resources/views/layouts/header.php';
         require_once __DIR__ . '/../../resources/views/layouts/sidebar.php';
         
+        // Incluimos la vista, las variables $alertaCierre y $nombreSemestreVencido pasarán automáticamente
         if (file_exists(__DIR__ . '/../../resources/views/admin/index.php')) {
             require_once __DIR__ . '/../../resources/views/admin/index.php';
         } else {
@@ -408,6 +423,14 @@ public function cambiarEstadoUsuario($id) {
             ]);
 
             $pdo->commit();
+
+            // 🔥 SENIOR FIX: Actualizar la sesión al nuevo periodo para que los lentes viajen automáticamente
+            $stmtActivo = $pdo->query("SELECT id, nombre_periodo, estado FROM periodos_academicos WHERE estado = 'activo' LIMIT 1");
+            $nuevoActivo = $stmtActivo->fetch(\PDO::FETCH_ASSOC);
+            $_SESSION['periodo_vista_id'] = $nuevoActivo['id'];
+            $_SESSION['periodo_vista_nombre'] = $nuevoActivo['nombre_periodo'];
+            $_SESSION['periodo_vista_estado'] = $nuevoActivo['estado'];
+
             header('Location: ' . BASE_URL . '/dashboard/admin/semestres?success=' . urlencode("✅ Semestre cerrado. Nuevo semestre {$nuevo['nombre']} abierto con éxito."));
             exit;
         } catch (\Throwable $e) { 
@@ -428,32 +451,33 @@ public function cambiarEstadoUsuario($id) {
     }
 
 
-    /** se deja un mes de gracia para cierre de bloque semestral.
-     * HELPER PRIVADO: Calcula las nuevas fechas (Feb-Jul y Ago-Ene)
+ 
+    /**
+     * HELPER PRIVADO: Calcula las nuevas fechas exactas (Ene-Jun y Jul-Dic)
+     * facilitando las consultas de reportes semestrales.
      */
     private function calcularSiguienteSemestre($nombreActual) {
-        // Extraemos el año y el número de semestre actual
         if (preg_match('/Año\s+(\d{4})\s*.*Semestre\s+(I{1,2})/ui', $nombreActual, $matches)) {
             $añoActual = (int) $matches[1];
             $semestreActual = strtoupper($matches[2]);
         } else {
-            throw new \Exception("El formato del nombre '{$nombreActual}' no es válido. Debe contener 'Año YYYY' y 'Semestre I' o 'II'.");
+            throw new \Exception("El formato del nombre '{$nombreActual}' no es válido.");
         }
 
         if ($semestreActual === 'I') {
-            // Si estamos en I (Feb-Jul), pasamos al II (Ago-Ene)
+            // Si estamos en I (Ene-Jun), pasamos al II (Jul-Dic) del MISMO año
             $nuevoAño = $añoActual;
             $nuevoSemestre = 'II';
-            $meses = '(Ago - Ene)';
-            $fini = "{$nuevoAño}-08-01";
-            $ffin = ($nuevoAño + 1) . "-01-31"; // Termina en enero del SIGUIENTE año
+            $meses = '(Jul - Dic)';
+            $fini = "{$nuevoAño}-07-01";
+            $ffin = "{$nuevoAño}-12-31"; 
         } else {
-            // Si estamos en II (Ago-Ene), pasamos al I del próximo año (Feb-Jul)
+            // Si estamos en II (Jul-Dic), pasamos al I (Ene-Jun) del PRÓXIMO año
             $nuevoAño = $añoActual + 1;
             $nuevoSemestre = 'I';
-            $meses = '(Feb - Jul)';
-            $fini = "{$nuevoAño}-02-01";
-            $ffin = "{$nuevoAño}-07-31";
+            $meses = '(Ene - Jun)';
+            $fini = "{$nuevoAño}-01-01";
+            $ffin = "{$nuevoAño}-06-30";
         }
 
         return [
@@ -464,26 +488,34 @@ public function cambiarEstadoUsuario($id) {
     }
 
     /**
-     * Revierte el último cierre de semestre (Botón Deshacer)
+     * Revierte el último cierre de semestre (Botón Deshacer) con Estadísticas y Protección Total
      */
     public function deshacerCierreSemestre() {
         $pdo = \Config\Database::getInstance();
         $pdo->beginTransaction();
 
         try {
-            // 1. Verificar si el periodo actual está vacío
+            // 1. Verificar si el periodo actual existe
             $stmtActivo = $pdo->query("SELECT id FROM periodos_academicos WHERE estado = 'activo' LIMIT 1");
             $periodoActivo = $stmtActivo->fetch(\PDO::FETCH_ASSOC);
 
             if ($periodoActivo) {
-                $check = $pdo->prepare("SELECT COUNT(*) FROM historial_academico WHERE periodo_id = ?");
-                $check->execute([$periodoActivo['id']]);
+                // 🔥 SENIOR FIX: Revisamos si ya hay estudiantes matriculados
+                $checkEstudiantes = $pdo->prepare("SELECT COUNT(*) FROM historial_academico WHERE periodo_id = ?");
+                $checkEstudiantes->execute([$periodoActivo['id']]);
+                $totalEstudiantes = $checkEstudiantes->fetchColumn();
                 
-                if ($check->fetchColumn() > 0) {
-                    throw new \Exception("No se puede revertir: Ya hay estudiantes matriculados en este nuevo semestre.");
+                // 🔥 SENIOR FIX: Revisamos si ya hay eventos creados
+                $checkEventos = $pdo->prepare("SELECT COUNT(*) FROM eventos WHERE id_periodo = ?");
+                $checkEventos->execute([$periodoActivo['id']]);
+                $totalEventos = $checkEventos->fetchColumn();
+
+                // Si hay CUALQUIER dato, detenemos el proceso con un mensaje súper claro para el usuario
+                if ($totalEstudiantes > 0 || $totalEventos > 0) {
+                    throw new \Exception("Acción bloqueada por seguridad: No puedes deshacer el cierre porque el semestre actual ya tiene registrados {$totalEventos} evento(s) y {$totalEstudiantes} estudiante(s). Debes eliminar o reasignar esos registros primero.");
                 }
 
-                // 2. Borrar el periodo nuevo (porque está vacío)
+                // 2. Si el semestre está totalmente virgen, lo borramos con seguridad
                 $pdo->prepare("DELETE FROM periodos_academicos WHERE id = ?")->execute([$periodoActivo['id']]);
             }
 
@@ -495,11 +527,36 @@ public function cambiarEstadoUsuario($id) {
                 ORDER BY id DESC LIMIT 1
             ");
 
-            $pdo->commit();
-            header('Location: ' . BASE_URL . '/dashboard/admin/semestres?success=Cierre revertido con éxito');
+            // 4. Obtener estadísticas del periodo reactivado para la alerta de éxito
+            $stmtRev = $pdo->query("SELECT * FROM periodos_academicos WHERE estado = 'activo' LIMIT 1");
+            $periodoRev = $stmtRev->fetch(\PDO::FETCH_ASSOC);
+            
+            if($periodoRev) {
+                $idRev = $periodoRev['id'];
+                $nombreRev = $periodoRev['nombre_periodo'];
+
+                // Contamos qué acabamos de rescatar
+                $totalEv = $pdo->query("SELECT COUNT(*) FROM eventos WHERE id_periodo = $idRev")->fetchColumn();
+                $totalEst = $pdo->query("SELECT COUNT(*) FROM historial_academico WHERE periodo_id = $idRev")->fetchColumn();
+
+                $pdo->commit();
+                
+                // Actualizar la sesión al periodo rescatado
+                $_SESSION['periodo_vista_id'] = $periodoRev['id'];
+                $_SESSION['periodo_vista_nombre'] = $periodoRev['nombre_periodo'];
+                $_SESSION['periodo_vista_estado'] = $periodoRev['estado'];
+
+                // Mensaje enriquecido
+                $mensaje = "✅ Cierre revertido con éxito. Has regresado al semestre: '$nombreRev'. Tienes $totalEv eventos y $totalEst estudiantes activos nuevamente.";
+                header('Location: ' . BASE_URL . '/dashboard/admin/semestres?success=' . urlencode($mensaje));
+            } else {
+                $pdo->commit();
+                header('Location: ' . BASE_URL . '/dashboard/admin/semestres?success=' . urlencode('Cierre revertido, pero no se encontró un semestre anterior.'));
+            }
 
         } catch (\Exception $e) {
             $pdo->rollBack();
+            // Aquí es donde tu vista captura el "throw new Exception" y muestra el mensaje rojo bonito
             header('Location: ' . BASE_URL . '/dashboard/admin/semestres?error=' . urlencode($e->getMessage()));
         }
         exit;

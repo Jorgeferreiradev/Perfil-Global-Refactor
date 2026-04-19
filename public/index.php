@@ -5,9 +5,10 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 // ---------------------------------------------------
 
-// 1. Inicialización
+// 1. Inicialización de Sesión
 session_start();
 
+// 🔥 SENIOR FIX: Cargar dependencias ANTES de usar cualquier Clase
 // Autoload de Composer
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -18,7 +19,24 @@ require_once __DIR__ . '/../config/config.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../config');
 $dotenv->safeLoad();
 
-// 2. Instancia del Router
+// 2. Cargar el periodo activo ANTES de que cualquier controlador actúe
+// Ahora sí funcionará porque la clase Database ya fue cargada por el autoloader
+if (isset($_SESSION['user_id']) && !isset($_SESSION['periodo_vista_id'])) {
+    $pdoGlobal = \Config\Database::getInstance();
+    $stmtActivo = $pdoGlobal->query("SELECT id, nombre_periodo, estado FROM periodos_academicos WHERE estado = 'activo' LIMIT 1");
+    $periodoActivo = $stmtActivo->fetch(\PDO::FETCH_ASSOC);
+    
+    if ($periodoActivo) {
+        $_SESSION['periodo_vista_id'] = $periodoActivo['id'];
+        $_SESSION['periodo_vista_nombre'] = $periodoActivo['nombre_periodo'];
+        $_SESSION['periodo_vista_estado'] = $periodoActivo['estado'];
+    } else {
+        // Cortafuegos de seguridad si la base de datos no tiene semestres
+        $_SESSION['periodo_vista_id'] = 0; 
+    }
+}
+
+// 3. Instancia del Router
 $router = new \Bramus\Router\Router();
 
 $router->setBasePath('/perfilglobal_v2/public');

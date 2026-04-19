@@ -25,8 +25,9 @@ class ExcelReportService {
     // ==========================================
     public function generarMatrizSemestral($semestre, $datosPorLinea, $sede = 'Todas') {
         $sheet = $this->sheet;
-        $sheet->setTitle("Matriz $semestre");
-
+// 🔥 SENIOR FIX: Evitar crash de Excel por límite de 31 caracteres en el nombre de la hoja
+        $nombreSeguro = substr("Matriz " . $semestre, 0, 31);
+        $sheet->setTitle($nombreSeguro);
         // 1. TÍTULO GENERAL
         $sheet->mergeCells("A1:I1");
         $sheet->setCellValue('A1', "MATRIZ GENERAL DE BIENESTAR INSTITUCIONAL - SEMESTRE $semestre");

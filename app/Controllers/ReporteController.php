@@ -5,24 +5,25 @@ use App\Models\Reporte;
 use App\Models\Evento;
 use App\Services\ExcelReportService;
 use App\Services\PdfReportService;
+use Config\Database;
 
 class ReporteController {
+
+    // 🔥 HELPER SENIOR: Función centralizada para obtener el periodo de la sesión
+    private function obtenerContextoPeriodo() {
+        $pdo = Database::getInstance();
+        $stmt = $pdo->prepare("SELECT * FROM periodos_academicos WHERE id = ?");
+        $stmt->execute([$_SESSION['periodo_vista_id']]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC);
+    }
 
     // VISTA PRINCIPAL (El panel de botones)
     public function index() {
         $eventoModel = new Evento();
         $listaEventos = $eventoModel->all(); 
 
-        // Calcular semestre actual para mostrarlo en la vista (Lógica Feb-Jul)
-        $mes = date('n');
-        $anio = date('Y');
-        
-        if ($mes >= 2 && $mes <= 7) {
-            $semestreTxt = "$anio-I (Feb - Jul)";
-        } else {
-            $anioReal = ($mes == 1) ? $anio - 1 : $anio;
-            $semestreTxt = "$anioReal-II (Ago - Ene)";
-        }
+        // 🔥 FIX: Mostrar el nombre del periodo actual basado en la sesión
+        $semestreTxt = $_SESSION['periodo_vista_nombre'] ?? 'Periodo Desconocido';
 
         $title = "Centro de Reportes";
         $active = "reportes";
@@ -39,23 +40,14 @@ class ReporteController {
     public function descargarMatriz() {
         $reporteModel = new Reporte();
         $excelService = new ExcelReportService(); 
-
+        
+        $periodo = $this->obtenerContextoPeriodo();
         $sedeFiltro = $_POST['sede'] ?? 'Todas';
         
-        $mes = date('n');
-        $anio = date('Y');
-        
-        // Fechas Febrero-Julio / Agosto-Enero
-        if ($mes >= 2 && $mes <= 7) {
-            $fi = "$anio-02-01"; 
-            $ff = "$anio-07-31"; 
-            $sem = "$anio-I";
-        } else {
-            $anioReal = ($mes == 1) ? $anio - 1 : $anio;
-            $fi = "$anioReal-08-01"; 
-            $ff = ($anioReal + 1) . "-01-31"; 
-            $sem = "$anioReal-II";
-        }
+        // 🔥 FIX: Fechas exactas del periodo de la BD
+        $fi = $periodo['fecha_inicio'];
+        $ff = $periodo['fecha_fin'];
+        $sem = $periodo['nombre_periodo'];
 
         $datosCompletos = [];
         $lineas = $reporteModel->getLineasConEventos($fi, $ff, $sedeFiltro);
@@ -82,13 +74,10 @@ class ReporteController {
         $info = $reporteModel->getInfoEvento($idEvento);
         $asistentes = $reporteModel->getDetalleAsistentes($idEvento);
 
-        // 2. Calcular resumen rápido (Contadores exactos)
         $resumen = ['Estudiante' => 0, 'Docente' => 0, 'Administrativo' => 0, 'Graduado' => 0, 'Invitado' => 0];
         
         foreach ($asistentes as $a) {
             $tipoReal = trim($a['tipo_vinculacion']);
-            
-            // Si el tipo existe exactamente como está escrito arriba, suma. Si no, va a Invitado.
             if (array_key_exists($tipoReal, $resumen)) {
                 $resumen[$tipoReal]++;
             } else {
@@ -105,18 +94,14 @@ class ReporteController {
     public function descargarMatrizPdf() {
         $reporteModel = new Reporte();
         $pdfService = new PdfReportService();
-
+        
+        $periodo = $this->obtenerContextoPeriodo();
         $sedeFiltro = $_POST['sede'] ?? 'Todas';
 
-        $mes = date('n'); 
-        $anio = date('Y');
-        
-        if ($mes >= 2 && $mes <= 7) { 
-            $fi = "$anio-02-01"; $ff = "$anio-07-31"; $sem = "$anio-I"; 
-        } else { 
-            $anioReal = ($mes == 1) ? $anio - 1 : $anio;
-            $fi = "$anioReal-08-01"; $ff = ($anioReal + 1) . "-01-31"; $sem = "$anioReal-II"; 
-        }
+        // 🔥 FIX: Fechas exactas del periodo de la BD
+        $fi = $periodo['fecha_inicio'];
+        $ff = $periodo['fecha_fin'];
+        $sem = $periodo['nombre_periodo'];
 
         $datosCompletos = [];
         $lineas = $reporteModel->getLineasConEventos($fi, $ff, $sedeFiltro);
@@ -143,7 +128,6 @@ class ReporteController {
         $info = $reporteModel->getInfoEvento($idEvento);
         $asistentes = $reporteModel->getDetalleAsistentes($idEvento);
         
-        // 2. Calcular resumen rápido (Contadores exactos)
         $resumen = ['Estudiante' => 0, 'Docente' => 0, 'Administrativo' => 0, 'Graduado' => 0, 'Invitado' => 0];
         
         foreach ($asistentes as $a) {

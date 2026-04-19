@@ -1,4 +1,5 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
+<?php include __DIR__ . '/../layouts/sidebar.php'; ?>
 
 <div class="container px-4 mt-4">
     <div class="row justify-content-center">
@@ -20,12 +21,24 @@
                     <form action="<?= BASE_URL ?>/dashboard/personas/guardar" method="POST">
                         
                         <div class="row g-3">
-                            <div class="col-md-12 mb-2">
+                            <div class="col-md-6 mb-2">
                                 <label class="form-label fw-bold">Tipo de Vinculación <span class="text-danger">*</span></label>
                                 <select name="id_tipo_persona" class="form-select" required>
                                     <option value="">Seleccione...</option>
                                     <?php foreach($tipos as $t): ?>
                                         <option value="<?= $t['id_tipo'] ?>"><?= $t['nombre_tipo'] ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold">Carrera / Programa <span class="text-danger">*</span></label>
+                                <select name="id_programa" class="form-select" required>
+                                    <option value="">Seleccione Carrera...</option>
+                                    <?php foreach($programas as $prog): ?>
+                                        <option value="<?= $prog['id_programa'] ?>">
+                                            <?= htmlspecialchars($prog['nombre_programa']) ?>
+                                        </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>

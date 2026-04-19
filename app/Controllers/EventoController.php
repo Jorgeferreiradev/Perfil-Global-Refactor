@@ -10,6 +10,21 @@ use chillerlan\QRCode\QROptions;
 
 class EventoController {
 
+    /**
+     * 🔥 HELPER SENIOR: Bloquea intentos de escritura en semestres históricos.
+     * Convierte el sistema en modo "Solo Lectura" si el periodo no está activo.
+     */
+    private function protegerSemestreHistorico() {
+        if (!isset($_SESSION['periodo_vista_estado']) || $_SESSION['periodo_vista_estado'] !== 'activo') {
+            $_SESSION['flash'] = [
+                'type' => 'danger', 
+                'msg'  => '⛔ Acción denegada: El semestre seleccionado es histórico (Solo Lectura). No se permiten modificaciones.'
+            ];
+            header('Location: ' . BASE_URL . '/dashboard/eventos');
+            exit;
+        }
+    }
+
     /* =======================
        LISTAR EVENTOS
     ======================= */
@@ -37,10 +52,10 @@ class EventoController {
     /* =======================
        CREAR EVENTO
     ======================= */
-/* =======================
-       CREAR EVENTO (Validación de fecha pasada eliminada)
-    ======================= */
     public function store() {
+        // 🛡️ CANDADO DE HIERRO: Evita inserciones en el pasado
+        $this->protegerSemestreHistorico();
+
         $data = [
             'nombre_evento'        => trim($_POST['nombre_evento']),
             'id_linea_accion'      => $_POST['linea_accion'],
@@ -62,9 +77,12 @@ class EventoController {
     }
 
     /* =======================
-       EDITAR EVENTO (Validación de fecha pasada eliminada)
+       EDITAR EVENTO
     ======================= */
     public function update($id) {
+        // 🛡️ CANDADO DE HIERRO: Evita ediciones en el pasado
+        $this->protegerSemestreHistorico();
+
         $model = new Evento();
         $eventoActual = $model->getById($id);
 
@@ -73,7 +91,6 @@ class EventoController {
             exit;
         }
 
-        // 3. Preparar datos (Ya no validamos contra la fecha/hora actual)
         $data = [
             'nombre_evento'        => trim($_POST['nombre_evento']),
             'id_linea_accion'      => $_POST['linea_accion'],
@@ -85,7 +102,6 @@ class EventoController {
             'hora_final'           => $_POST['hora_final']
         ];
 
-        // 4. Guardar
         if ($model->update($id, $data)) {
             header('Location: ' . BASE_URL . '/dashboard/eventos?success=actualizado');
         } else {
@@ -93,93 +109,14 @@ class EventoController {
         }
         exit;
     }
-                            // valida que la fecha/hora del evento no sea pasada al momento de CREAR o EDITAR un evento. Esta validación se ha eliminado para permitir la creación/edición de eventos con fechas pasadas, lo cual puede ser útil para registrar eventos históricos o corregir errores en la fecha sin restricciones.
-                            //
-                            //     public function store() {
-                            //         // Validación de fecha pasada
-                            //         $fechaEvento = new DateTime($_POST['fecha_inicio'].' '.$_POST['hora_inicio']);
-                            //         $ahora = new DateTime();
 
-                            //         if ($fechaEvento < $ahora) {
-                            //             header('Location: ' . BASE_URL . '/dashboard/eventos?error=fecha_pasada');
-                            //             exit;
-                            //         }
-
-                            //         $data = [
-                            //             'nombre_evento'        => trim($_POST['nombre_evento']),
-                            //             'id_linea_accion'      => $_POST['linea_accion'],
-                            //             'programa_responsable' => $_POST['programa_responsable'],
-                            //             'sede'                 => $_POST['sede'],
-                            //             'fecha_inicio'         => $_POST['fecha_inicio'],
-                            //             'hora_inicio'          => $_POST['hora_inicio'],
-                            //             'fecha_final'          => $_POST['fecha_final'],
-                            //             'hora_final'           => $_POST['hora_final'],
-                            //             'id_periodo'           => (new Periodo())->getActivoId(),
-                            //             'creado_por'           => $_SESSION['user_id']
-                            //         ];
-
-                            //         $model = new Evento();
-                            //         $model->create($data);
-
-                            //         header('Location: ' . BASE_URL . '/dashboard/eventos?success=creado');
-                            //         exit;
-                            //     }
-
-                            //     /* =======================
-                            //        EDITAR EVENTO
-                            //     ======================= */
-
-                            //     public function update($id) {
-
-                            //     // 1. Obtener evento actual
-                                
-                                
-
-                            //     $model = new Evento();
-                            //     $eventoActual = $model->getById($id);
-
-                            //     if (!$eventoActual) {
-                            //         header('Location: ' . BASE_URL . '/dashboard/eventos?error=no_existe');
-                            //         exit;
-                            //     }
-
-                            //     // 2. Validar SOLO si cambió la fecha/hora
-                            //     $fechaNueva = new DateTime($_POST['fecha_inicio'] . ' ' . $_POST['hora_inicio']);
-                            //     $fechaActual = new DateTime($eventoActual['fecha_inicio'] . ' ' . $eventoActual['hora_inicio']);
-                            //     $ahora = new DateTime();
-
-                            //     if ($fechaNueva != $fechaActual && $fechaNueva < $ahora) {
-                            //         header('Location: ' . BASE_URL . '/dashboard/eventos?error=fecha_pasada');
-                            //         exit;
-                            //     }
-
-                            //     // 3. Preparar datos
-                            //     $data = [
-                            //         'nombre_evento'        => trim($_POST['nombre_evento']),
-                            //         'id_linea_accion'      => $_POST['linea_accion'],
-                            //         'programa_responsable' => $_POST['programa_responsable'],
-                            //         'sede'                 => $_POST['sede'],
-                            //         'fecha_inicio'         => $_POST['fecha_inicio'],
-                            //         'hora_inicio'          => $_POST['hora_inicio'],
-                            //         'fecha_final'          => $_POST['fecha_final'],
-                            //         'hora_final'           => $_POST['hora_final']
-                            //     ];
-
-                            //     // 4. Guardar
-                            //     if ($model->update($id, $data)) {
-                            //         header('Location: ' . BASE_URL . '/dashboard/eventos?success=actualizado');
-                            //     } else {
-                            //         header('Location: ' . BASE_URL . '/dashboard/eventos?error=update');
-                            //     }
-                            //     exit;
-                            // }
-
-
-/* =======================
+    /* =======================
        CAMBIAR ESTADO (ACTIVAR/DESACTIVAR)
     ======================= */
     public function cambiarEstado($id, $estado) {
-        // Validar que el estado sea válido para evitar inyecciones
+        // 🛡️ CANDADO DE HIERRO: Evita reactivar/desactivar en el pasado
+        $this->protegerSemestreHistorico();
+
         $estadosPermitidos = ['activo', 'inactivo'];
         if (!in_array($estado, $estadosPermitidos)) {
              header('Location: ' . BASE_URL . '/dashboard/eventos?error=estado_invalido');
@@ -197,9 +134,10 @@ class EventoController {
     }
 
     /* =======================
-       VER ASISTENTES
+       VER ASISTENTES (Permitido siempre)
     ======================= */
     public function verAsistentes($id) {
+        // Aquí NO ponemos candado, porque consultar la historia sí está permitido.
         $eventoModel = new Evento();
         $evento = $eventoModel->getById($id);
 
@@ -217,9 +155,10 @@ class EventoController {
     }
 
     /* =======================
-       MOSTRAR QR
+       MOSTRAR QR (Permitido siempre)
     ======================= */
     public function mostrarQR($token) {
+        // Aquí NO ponemos candado, porque ver un QR histórico puede ser útil.
         $evento = (new Evento())->getByToken($token);
         if (!$evento) die("Token inválido");
 
