@@ -41,17 +41,20 @@ class PersonasController {
 
         $model = new Persona();
         $tipos = $model->getTipos(); 
-        // 🔥 CARGAMOS CARRERAS PARA EL SELECT
         $programas = $model->getProgramas(); 
 
         require_once __DIR__ . '/../../resources/views/personas/create.php';
     }
 
     /* ===============================
-        GUARDAR (CON HISTORIAL)
+        GUARDAR (CREAR)
     =============================== */
     public function store() {
         $this->protegerSemestreHistorico();
+
+        // 🔥 SANITIZACIÓN SENIOR: Limpiar la basura antes de procesar
+        $_POST['numero_documento'] = preg_replace('/[^0-9]/', '', $_POST['numero_documento'] ?? '');
+        $_POST['telefono']         = preg_replace('/[^0-9+]/', '', $_POST['telefono'] ?? '');
 
         $model = new Persona();
 
@@ -61,26 +64,11 @@ class PersonasController {
             exit;
         }
 
-        // 1. Crear persona básica
+        // 1. Crear persona
+        // IMPORTANTE: El método create() en tu modelo Persona YA inserta en historial_academico.
         $idPersona = $model->create($_POST);
 
         if ($idPersona) {
-            // 2. 🔥 LÓGICA SENIOR: Crear entrada inicial en Historial Académico
-            if (!empty($_POST['id_programa'])) {
-                $pdo = Database::getInstance();
-                $idPeriodo = (new Periodo())->getActivoId();
-                
-                $sql = "INSERT INTO historial_academico (persona_id, periodo_id, id_programa, id_tipo_persona) 
-                        VALUES (:pid, :per, :prog, :tipo)";
-                
-                $pdo->prepare($sql)->execute([
-                    ':pid'  => $idPersona,
-                    ':per'  => $idPeriodo,
-                    ':prog' => $_POST['id_programa'],
-                    ':tipo' => $_POST['id_tipo_persona'] ?? 1
-                ]);
-            }
-
             $_SESSION['flash'] = ['type' => 'success', 'msg' => 'Persona y carrera registradas.'];
         } else {
             $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Error en el registro.'];
@@ -98,7 +86,6 @@ class PersonasController {
         $model = new Persona();
         $persona = $model->getById($id);
         $tipos   = $model->getTipos();
-        // 🔥 CARGAMOS CARRERAS PARA EL SELECT
         $programas = $model->getProgramas(); 
 
         if (!$persona) {
@@ -110,10 +97,14 @@ class PersonasController {
     }
 
     /* ===============================
-        ACTUALIZAR (BÁSICO + HISTORIAL)
+        ACTUALIZAR
     =============================== */
     public function update($id) {
         $this->protegerSemestreHistorico();
+
+        // 🔥 SANITIZACIÓN SENIOR: Limpiar la basura antes de procesar
+        $_POST['numero_documento'] = preg_replace('/[^0-9]/', '', $_POST['numero_documento'] ?? '');
+        $_POST['telefono']         = preg_replace('/[^0-9+]/', '', $_POST['telefono'] ?? '');
 
         $model = new Persona();
 
@@ -126,27 +117,35 @@ class PersonasController {
         // 1. Actualizar tabla 'personas'
         if ($model->update($id, $_POST)) {
             
-            // 2. Actualizar 'historial_academico' del semestre activo
+            // 2. LÓGICA SENIOR: Actualizamos el programa en el historial del semestre activo
             if (!empty($_POST['id_programa'])) {
                 $pdo = Database::getInstance();
                 $idPeriodo = (new Periodo())->getActivoId();
                 
-                $sql = "UPDATE historial_academico 
-                        SET id_programa = :prog, id_tipo_persona = :tipo 
-                        WHERE persona_id = :pid AND periodo_id = :per";
-                
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([
-                    ':prog' => $_POST['id_programa'],
-                    ':tipo' => $_POST['id_tipo_persona'] ?? 1,
-                    ':pid'  => $id,
-                    ':per'  => $idPeriodo
+                // Paso A: Verificar si ya existe registro en este semestre
+                $stmtCheck = $pdo->prepare("SELECT id FROM historial_academico WHERE persona_id = :pid AND periodo_id = :per");
+                $stmtCheck->execute([
+                    ':pid' => $id,
+                    ':per' => $idPeriodo
                 ]);
 
-                // Si no se actualizó ninguna fila (porque el registro no existía), lo insertamos
-                if ($stmt->rowCount() == 0) {
+                if ($stmtCheck->rowCount() > 0) {
+                    // Paso B1: UPDATE Seguro
+                    $sql = "UPDATE historial_academico 
+                            SET id_programa = :prog, id_tipo_persona = :tipo 
+                            WHERE persona_id = :pid AND periodo_id = :per";
+
+                    $pdo->prepare($sql)->execute([
+                        ':prog' => $_POST['id_programa'],
+                        ':tipo' => $_POST['id_tipo_persona'] ?? 1,
+                        ':pid'  => $id,
+                        ':per'  => $idPeriodo
+                    ]);
+                } else {
+                    // Paso B2: INSERT (Por si viene de un semestre histórico sin historial actual)
                     $sqlIns = "INSERT INTO historial_academico (persona_id, periodo_id, id_programa, id_tipo_persona) 
-                               VALUES (:pid, :per, :prog, :tipo)";
+                            VALUES (:pid, :per, :prog, :tipo)";
+
                     $pdo->prepare($sqlIns)->execute([
                         ':pid'  => $id,
                         ':per'  => $idPeriodo,
@@ -154,6 +153,12 @@ class PersonasController {
                         ':tipo' => $_POST['id_tipo_persona'] ?? 1
                     ]);
                 }
+
+                // 🔥 EXTRA: Activar automáticamente si estaba pendiente/rechazado
+                $pdo->prepare("UPDATE personas 
+                            SET estado_aprobacion = 'activo' 
+                            WHERE id = :id AND estado_aprobacion != 'activo'")
+                    ->execute([':id' => $id]);
             }
 
             $_SESSION['flash'] = ['type' => 'success', 'msg' => 'Datos actualizados correctamente.'];

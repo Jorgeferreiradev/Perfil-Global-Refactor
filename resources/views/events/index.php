@@ -178,6 +178,14 @@
     </div>
 </div>
 
+<?php
+    // Obtenemos los límites de fecha del semestre activo directamente de la BD
+    $pdoFechas = \Config\Database::getInstance();
+    $stmtFechas = $pdoFechas->query("SELECT fecha_inicio, fecha_fin FROM periodos_academicos WHERE estado = 'activo' LIMIT 1");
+    $limites = $stmtFechas->fetch(\PDO::FETCH_ASSOC);
+    $minSemestre = $limites ? $limites['fecha_inicio'] : '';
+    $maxSemestre = $limites ? $limites['fecha_fin'] : '';
+?>
 <div class="modal fade" id="modalCrearEvento" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content border-0 shadow-lg">
@@ -231,7 +239,7 @@
                                 <label class="form-label fw-bold small text-uppercase text-muted">Inicio</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-white"><i class="fas fa-calendar text-primary"></i></span>
-                                    <input type="date" name="fecha_inicio" class="form-control" required min="<?= date('Y-m-d') ?>">
+                                    <input type="date" name="fecha_inicio" id="edit_fini" class="form-control" required min="<?= $minSemestre ?>" max="<?= $maxSemestre ?>">
                                     <input type="time" name="hora_inicio" class="form-control" required>
                                 </div>
                             </div>
@@ -239,7 +247,7 @@
                                 <label class="form-label fw-bold small text-uppercase text-muted">Fin</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-white"><i class="fas fa-flag-checkered text-danger"></i></span>
-                                    <input type="date" name="fecha_final" class="form-control" required min="<?= date('Y-m-d') ?>">
+                                    <input type="date" name="fecha_final" id="edit_ffin" class="form-control" required min="<?= $minSemestre ?>" max="<?= $maxSemestre ?>">
                                     <input type="time" name="hora_final" class="form-control" required>
                                 </div>
                             </div>
@@ -300,7 +308,7 @@
                                 <label class="form-label fw-bold small text-uppercase text-muted">Inicio</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-white"><i class="fas fa-calendar text-primary"></i></span>
-                                    <input type="date" name="fecha_inicio" id="edit_fini" class="form-control" required>
+                                    <input type="date" name="fecha_inicio" id="edit_fini" class="form-control" required min="<?= $minSemestre ?>" max="<?= $maxSemestre ?>">
                                     <input type="time" name="hora_inicio" id="edit_hini" class="form-control" required>
                                 </div>
                             </div>
@@ -308,7 +316,7 @@
                                 <label class="form-label fw-bold small text-uppercase text-muted">Fin</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-white"><i class="fas fa-flag-checkered text-danger"></i></span>
-                                    <input type="date" name="fecha_final" id="edit_ffin" class="form-control" required>
+                                    <input type="date" name="fecha_final" id="edit_ffin" class="form-control" required min="<?= $minSemestre ?>" max="<?= $maxSemestre ?>">
                                     <input type="time" name="hora_final" id="edit_hfin" class="form-control" required>
                                 </div>
                             </div>

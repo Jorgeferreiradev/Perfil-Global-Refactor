@@ -33,7 +33,7 @@
 
                             <div class="col-md-6 mb-2">
                                 <label class="form-label fw-bold">Carrera / Programa <span class="text-danger">*</span></label>
-                                <select name="id_programa" class="form-select" required>
+                                <select name="id_programa" id="select-programa-admin" class="form-select" required placeholder="Escribe para buscar carrera...">
                                     <option value="">Seleccione Carrera...</option>
                                     <?php foreach($programas as $prog): ?>
                                         <option value="<?= $prog['id_programa'] ?>">
@@ -50,11 +50,16 @@
                                     <option value="TI">Tarjeta Identidad (TI)</option>
                                     <option value="CE">Cédula Extranjería (CE)</option>
                                     <option value="PPT">PPT (Permiso P. Temporal)</option>
+                                    <option value="Pasaporte">Pasaporte </option>
+
                                 </select>
                             </div>
                             <div class="col-md-8">
                                 <label class="form-label">Número de Documento <span class="text-danger">*</span></label>
-                                <input type="number" name="numero_documento" class="form-control" required placeholder="Ej: 1090...">
+                                <input type="text" name="numero_documento" class="form-control" 
+                                    value="<?= $persona['numero_documento'] ?? '' ?>" required 
+                                    placeholder="Ej: 1090..." 
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                             </div>
 
                             <div class="col-md-6">
@@ -72,7 +77,10 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Teléfono / Celular</label>
-                                <input type="text" name="telefono" class="form-control">
+                                <input type="text" name="telefono" class="form-control" 
+                                    value="<?= $persona['telefono'] ?? '' ?>" 
+                                    placeholder="Ej: +57 313..." 
+                                    oninput="this.value = this.value.replace(/[^0-9+]/g, '')">
                             </div>
                         </div>
 
@@ -88,5 +96,16 @@
         </div>
     </div>
 </div>
+
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        new TomSelect("#select-programa-admin", {
+            create: false,
+            sortField: { field: "text", direction: "asc" }
+        });
+    });
+</script>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

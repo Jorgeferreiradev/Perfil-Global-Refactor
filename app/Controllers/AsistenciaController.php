@@ -88,7 +88,9 @@ class AsistenciaController {
     public function vistaRegistroManual($token, $documento) {
         $eventoModel = new Evento();
         $evento = $eventoModel->getByToken($token);
-        
+        // FIX: Traer la lista de carreras desde el modelo Persona
+        $personaModel = new \App\Models\Persona();
+        $programas = $personaModel->getProgramas();
         if(!$evento) {
             $this->mostrarError("Error", "Evento no válido.");
             return;

@@ -155,7 +155,7 @@ public function index() {
             // Enviar correo ANTES de redirigir
             try {
                 $mailer = new CorreoService();
-                $mailer->enviarCredenciales($data['correo'], $data['nombres'], $_POST['password']);
+                $mailer->enviarBienvenidaUsuario($data['correo'], $data['nombres'], $_POST['password']);
                 header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?success=creado_y_notificado');
             } catch (\Exception $e) {
                 // Si el correo falla pero el usuario se creó, avisamos
@@ -286,6 +286,9 @@ public function cambiarEstadoUsuario($id) {
     /**
      * Procesa el archivo Excel/CSV
      */
+    /**
+     * Procesa el archivo Excel/CSV
+     */
     public function procesarCarga() {
 
         /* 1. VALIDAR SUBIDA */
@@ -295,24 +298,40 @@ public function cambiarEstadoUsuario($id) {
         }
 
         /* 2. VALIDAR EXTENSIÓN */
+        $tmpName = $_FILES['archivo_excel']['tmp_name'];
         $ext = strtolower(pathinfo($_FILES['archivo_excel']['name'], PATHINFO_EXTENSION));
+        
         if (!in_array($ext, ['xlsx', 'xls', 'csv'])) {
             header('Location: ' . BASE_URL . '/dashboard/admin/carga-masiva?error=formato');
             exit;
         }
 
-        /* 3. PROCESAR ARCHIVO */
-        $servicio  = new ImportService();
-        $resultado = $servicio->procesarArchivo($_FILES['archivo_excel']['tmp_name']);
+        /* 🔥 3. CORTAFUEGOS SENIOR: VALIDAR CABECERAS (EVITAR CORRUPCIÓN) */
+        if ($ext === 'csv') {
+            $handle = fopen($tmpName, "r");
+            $headers = fgetcsv($handle, 1000, ","); 
+            fclose($handle);
+            
+            // Si en la primera fila no existe la columna "numero_documento" o "documento", bloqueamos.
+            if (!in_array('numero_documento', $headers) && !in_array('documento', $headers) && !in_array('identificacion', $headers)) {
+                $_SESSION['flash'] = ['type' => 'danger', 'msg' => '❌ Error de Seguridad: El archivo no es una plantilla de Personas válida. Faltan columnas como "numero_documento".'];
+                header('Location: ' . BASE_URL . '/dashboard/admin/carga-masiva');
+                exit;
+            }
+        }
 
-       /* 4. ERROR FATAL */
+        /* 4. PROCESAR ARCHIVO (Si pasó la seguridad) */
+        $servicio  = new ImportService();
+        $resultado = $servicio->procesarArchivo($tmpName);
+
+       /* 5. ERROR FATAL */
         if (isset($resultado['error_fatal'])) {
             $_SESSION['error_carga'] = $resultado['error_fatal'];
             header('Location: ' . BASE_URL . '/dashboard/admin/carga-masiva');
             exit;
         }
 
-        /* 5. ÉXITO Y OBSERVACIONES (DUPLICADOS) */
+        /* 6. ÉXITO Y OBSERVACIONES */
         $msg = sprintf(
             'Proceso terminado. Nuevos: %d, Duplicados: %d',
             $resultado['nuevos'],
@@ -321,23 +340,18 @@ public function cambiarEstadoUsuario($id) {
 
         $urlRedireccion = BASE_URL . '/dashboard/admin/carga-masiva?success=' . urlencode($msg);
 
-        // Si el ImportService detectó duplicados o filas vacías, armamos la alerta amarilla
         if (!empty($resultado['errores'])) {
-            // LÓGICA SENIOR: Los navegadores bloquean URLs muy largas. 
-            // Si hay más de 50 errores, cortamos la lista para que el sistema no colapse.
             $listaErrores = $resultado['errores'];
             if (count($listaErrores) > 50) {
                 $listaErrores = array_slice($listaErrores, 0, 50);
                 $listaErrores[] = "...y otros " . (count($resultado['errores']) - 50) . " registros omitidos más.";
             }
-            
-            // Adjuntamos la lista codificada a la URL para que tu vista la lea en el $_GET['warning']
             $urlRedireccion .= '&warning=' . urlencode(json_encode($listaErrores));
         }
 
         header('Location: ' . $urlRedireccion);
         exit;
-    }   
+    }
     /* =====================================================
      * ========== MODO DIOS: GESTIÓN DE SEMESTRES ==========
      * ===================================================== */

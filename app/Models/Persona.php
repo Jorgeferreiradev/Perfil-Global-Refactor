@@ -237,9 +237,9 @@ class Persona {
             ->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getProgramas() {
+   public function getProgramas() {
         return $this->pdo
-            ->query("SELECT id_programa, nombre_programa FROM programas WHERE id_programa != 99 ORDER BY nombre_programa ASC")
+            ->query("SELECT id_programa, nombre_programa FROM programas WHERE id_programa != 99 AND estado = 'activo' ORDER BY nombre_programa ASC")
             ->fetchAll(PDO::FETCH_ASSOC);
     }
 

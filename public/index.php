@@ -105,18 +105,36 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
         $router->get('/eliminar/{id}', "$controllers\PersonasController@delete");
     });
 
-    // 4. ZONA ADMIN (SOLO ROL 'admin')
+// 4. ZONA ADMIN Y SUPERADMIN
     $router->mount('/admin', function () use ($router, $controllers) {
         
-        // Middleware de rol
+        // 🛡️ CORTAFUEGOS NIVEL 1: Dejar pasar a la zona admin solo a admins y superadmins
         $router->before('GET|POST', '/.*', function () {
-            (new \App\Middleware\RoleMiddleware())->handle('admin');
+            $rol = $_SESSION['user_rol'] ?? '';
+            if ($rol !== 'admin' && $rol !== 'superadmin') {
+                header('Location: ' . BASE_URL . '/dashboard');
+                exit;
+            }
         });
 
-        // Home admin (Carga masiva)
+        // 👑 CORTAFUEGOS NIVEL 2: Proteger SOLO las rutas que tengan la palabra "usuarios"
+        $router->before('GET|POST', '/usuarios.*', function () {
+            if (($_SESSION['user_rol'] ?? '') !== 'superadmin') {
+                header('Location: ' . BASE_URL . '/dashboard/admin');
+                exit;
+            }
+        });
+        // 👑 CORTAFUEGOS NIVEL 2: MÓDULO EXCLUSIVO PARA SUPERADMIN (Programas)
+        $router->before('GET|POST', '/programas.*', function () {
+            if (($_SESSION['user_rol'] ?? '') !== 'superadmin') {
+                header('Location: ' . BASE_URL . '/dashboard/admin'); exit;
+            }
+        });
+
+        // Home admin
         $router->get('/', "$controllers\AdminController@index");
 
-        // Gestión de Usuarios
+        // Gestión de Usuarios (Protegido por el Cortafuegos Nivel 2)
         $router->get('/usuarios', "$controllers\AdminController@gestionarUsuarios");
         $router->post('/usuarios/guardar', "$controllers\AdminController@guardarUsuario");
         $router->get('/usuarios/editar/{id}', "$controllers\AdminController@editarUsuario");
@@ -132,14 +150,23 @@ $router->mount('/dashboard', function () use ($router, $controllers, $middleware
         $router->get('/carga-masiva', "$controllers\AdminController@vistaCargaMasiva");
         $router->post('/carga-masiva/procesar', "$controllers\AdminController@procesarCarga");
 
-        // 🔥 NUEVO MÓDULO: GESTIÓN DE SEMESTRES
+        // Gestión Semestral
         $router->get('/semestres', "$controllers\AdminController@semestres");
         $router->get('/semestres/simular-cierre', "$controllers\AdminController@simularCierreSemestre");
         $router->get('/semestres/forzar-cierre', "$controllers\AdminController@forzarCierreSemestre");
         $router->get('/semestres/deshacer-cierre', "$controllers\AdminController@deshacerCierreSemestre");
-    });
 
-}); // Fin del mount /dashboard
+        // 🔥 NUEVO MÓDULO: PROGRAMAS ACADÉMICOS
+        $router->mount('/programas', function () use ($router, $controllers) {
+            $router->get('/', "$controllers\ProgramaController@index");
+            $router->get('/crear', "$controllers\ProgramaController@create");
+            $router->post('/guardar', "$controllers\ProgramaController@store");
+            $router->get('/editar/{id}', "$controllers\ProgramaController@edit");
+            $router->post('/actualizar/{id}', "$controllers\ProgramaController@update");
+            $router->get('/estado/{id}', "$controllers\ProgramaController@toggle");
+            });
+        });     
+    }); // Fin del mount /dashboard
 
 // =======================================================
 // C. MÓDULO MI PERFIL (Ruta Protegida Independiente)

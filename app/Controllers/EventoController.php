@@ -52,6 +52,14 @@ class EventoController {
     /* =======================
        CREAR EVENTO
     ======================= */
+
+    public function create() {
+    // Obtenemos las fechas del periodo activo de la BD o sesión
+    $fechaInicio = $_SESSION['periodo_inicio']; // Supongamos que guardas esto: '2026-02-01'
+    $fechaFin = $_SESSION['periodo_fin'];       // '2026-06-30'
+
+    require_once __DIR__ . '/../../resources/views/eventos/create.php';
+}
     public function store() {
         // 🛡️ CANDADO DE HIERRO: Evita inserciones en el pasado
         $this->protegerSemestreHistorico();

@@ -12,7 +12,6 @@ use PDOException;
 class ImportService {
     private $pdo;
     
-    // Diccionario para traducir texto a IDs (Sincronizado con tu tabla tipos_personas)
     private $mapaComunidad = [
         'estudiante'     => 1,
         'docente'        => 2,
@@ -29,8 +28,8 @@ class ImportService {
         $stats = [
             'procesados' => 0,
             'nuevos' => 0, 
-            'actualizados' => 0, // Lo dejamos en 0 porque ahora omitiremos
-            'omitidos' => 0,     // NUEVO: Contador de omitidos
+            'actualizados' => 0, 
+            'omitidos' => 0,     
             'errores' => [] 
         ];
 
@@ -49,13 +48,36 @@ class ImportService {
             $idPeriodo = $periodoModel->getActivoId();
             if (!$idPeriodo) return ['error_fatal' => "No hay un periodo académico activo configurado en el sistema."];
 
-            // Ignorar la fila de encabezados
+            // 🔥 3. MURO DE HIERRO: VALIDACIÓN ESTRICTA DE LA PLANTILLA
+            if (empty($filas) || count($filas) < 2) {
+                return ['error_fatal' => "El archivo está vacío o no tiene datos para procesar."];
+            }
+
+            // Analizamos la fila 1 (Cabeceras)
+            $cabeceras = array_map(function($val) { 
+                return strtolower(trim((string)$val)); 
+            }, $filas[0]);
+
+            $esPlantillaValida = false;
+            foreach ($cabeceras as $cabecera) {
+                // Si la primera fila NO dice documento, identificacion o cédula, es el archivo equivocado.
+                if (strpos($cabecera, 'documento') !== false || strpos($cabecera, 'identificaci') !== false || strpos($cabecera, 'cédula') !== false) {
+                    $esPlantillaValida = true;
+                    break;
+                }
+            }
+
+            if (!$esPlantillaValida) {
+                return ['error_fatal' => "❌ ALERTA DE SEGURIDAD: Estás intentando subir un archivo que NO es la plantilla oficial de Personas (ej. Matriz Semestral o Reporte). Operación abortada para evitar corrupción de datos."];
+            }
+
+            // Si pasó el muro, ignoramos la fila de encabezados y seguimos
             array_shift($filas); 
 
-            // 3. PROCESAMIENTO FILA POR FILA
+            // 4. PROCESAMIENTO FILA POR FILA
             foreach ($filas as $index => $col) {
                 $filaNum = $index + 2;
-                $stats['procesados']++;
+                
 
                 if ($this->pdo->inTransaction()) {
                     $this->pdo->rollBack();
@@ -64,131 +86,120 @@ class ImportService {
                 $this->pdo->beginTransaction();
 
                 try {
-                                    // A. SANITIZACIÓN DE DATOS EXTREMA (Data Hygiene)
-                                    $tipoDoc   = $this->sanitizarTexto($col[0] ?? 'CC');
-                                    $doc       = $this->limpiarDocumento($col[1] ?? ''); 
-                                    $nombres   = strtoupper($this->sanitizarTexto($col[2] ?? ''));
-                                    $apellidos = strtoupper($this->sanitizarTexto($col[3] ?? ''));
-                                    $correo    = strtolower($this->sanitizarTexto($col[4] ?? ''));
-                                    $comunidad = strtolower($this->sanitizarTexto($col[5] ?? 'Estudiante'));
-                                    
-                                    // Corrección para celdas vacías en Excel evaluadas como 0
-                                    $valorProg = trim($col[6] ?? '');
-                                    $idProg    = ($valorProg === '') ? 99 : (int)$valorProg; 
-                                    
-                                    $nivel     = $this->sanitizarTexto($col[7] ?? 'Tecnólogo');
-                                    // 🔥 NUEVO: Protección contra niveles inválidos en el Excel
-                                                $nivelesValidos = ['Técnico', 'Tecnólogo', 'Profesional', 'Postgrado', 'Especializacion'];
-                                                if (!in_array($nivel, $nivelesValidos)) {
-                                                    $nivel = 'Tecnólogo'; // Valor por defecto si escribieron algo raro en el Excel
-                                                }
-                                    // 🔥 NUEVO: Atrapamos el celular (Columna I - Index 8) y le quitamos letras o espacios raros
-                                    $celular   = preg_replace('/[^0-9]/', '', $this->sanitizarTexto($col[8] ?? ''));
-
-                                    // Validaciones básicas
-                                    if (empty($doc) && empty($nombres)) {
-                                        $this->pdo->rollBack();
-                                        continue; 
-                                    }
-
-                                    if (empty($doc)) {
-                                        $stats['omitidos']++;
-                                        $stats['errores'][] = "Fila $filaNum: Documento vacío. (Omitido)";
-                                        $this->pdo->rollBack();
-                                        continue; 
-                                    }
-
-                                    $idTipoPersona = $this->mapaComunidad[$comunidad] ?? 5;
-
-                                    // B. GESTIÓN DE DUPLICADOS
-                                    $personaModel = new Persona();
-                                    $persona = $personaModel->getByDocumento($doc);
-
-                                    $esNuevo = false; // Bandera para saber qué contar al final
-
-                                    if ($persona) {
-                                        // SI YA EXISTE -> LO OMITIMOS
-                                        $stats['omitidos']++;
-                                        $stats['errores'][] = "Fila $filaNum: El documento $doc ya existe en el sistema. (Omitido)";
-                                        $this->pdo->rollBack();
-                                        continue; 
-                                    } else {
-                                        // SI ES NUEVO -> LO CREAMOS EN LA TRANSACCIÓN
-                                        $idPersona = $personaModel->create([
-                                            'tipo_documento' => $tipoDoc,
-                                            'numero_documento' => $doc,
-                                            'nombres' => $nombres,
-                                            'apellidos' => $apellidos,
-                                            'correo_institucional' => $correo,
-                                            'telefono' => !empty($celular) ? $celular : null,
-                                            'id_tipo_persona' => $idTipoPersona
-                                        ]);
-                                        $esNuevo = true; // Marcamos que es nuevo, pero AÚN NO SUMAMOS
-                                    }
-
-                                    // C. GESTIÓN DE HISTORIAL ACADÉMICO
-                                    if (!$this->existePrograma($idProg)) {
-                                        $idProg = 99; // Si pusieron un ID raro, lo mandamos a "Invitado"
-                                    }
-
-                                    $historial = new HistorialAcademico();
-                                    $historial->guardarOActualizar([
-                                        'persona_id' => $idPersona,
-                                        'periodo_id' => $idPeriodo,
-                                        'id_programa' => $idProg,
-                                        'id_tipo_persona' => $idTipoPersona, 
-                                        'nivel_formacion' => $nivel,
-                                        'semestre_cursado' => 0
-                                    ]);
-
-                                    // 🔥 SI LLEGAMOS AQUÍ, NADA FALLÓ. GUARDAMOS EN BASE DE DATOS.
-                                    $this->pdo->commit();
-
-                                    // 🔥 Y AHORA SÍ, ACTUALIZAMOS LOS CONTADORES (Porque ya es oficial)
-                                    if ($esNuevo) {
-                                        $stats['nuevos']++;
-                                    }
-
-                                } catch (Exception $e) {
-                                    if ($this->pdo->inTransaction()) {
-                                        $this->pdo->rollBack();
-                                    }
-                                    $stats['omitidos']++; // Como falló, lo contamos como omitido
-                                    $stats['errores'][] = "Fila $filaNum ($doc): " . $this->traducirError($e->getMessage());
-                                }
-                            }
-
-                            return $stats;
-
-                        } catch (Exception $e) {
-                            return ['error_fatal' => "Error crítico del sistema: " . $e->getMessage()];
-                        }
+                    // SANITIZACIÓN DE DATOS EXTREMA
+                    $tipoDoc   = $this->sanitizarTexto($col[0] ?? 'CC');
+                    $doc       = $this->limpiarDocumento($col[1] ?? ''); 
+                    $nombres   = strtoupper($this->sanitizarTexto($col[2] ?? ''));
+                    $apellidos = strtoupper($this->sanitizarTexto($col[3] ?? ''));
+                    $correo    = strtolower($this->sanitizarTexto($col[4] ?? ''));
+                    $comunidad = strtolower($this->sanitizarTexto($col[5] ?? 'Estudiante'));
+                    
+                    // 🔥 LÓGICA SENIOR: Si la fila está totalmente en blanco (artefactos de Excel), paramos el ciclo.
+                    if (empty($doc) && empty($nombres) && empty($apellidos) && empty($correo)) {
+                        $this->pdo->rollBack();
+                        break; 
                     }
 
-                    // --- MÉTODOS DE HIGIENE DE DATOS (NIVEL SENIOR) ---
+                    $stats['procesados']++;
 
-                    private function sanitizarTexto($valor) {
-                        if ($valor === null) return '';
-                        $valor = (string)$valor;
-                        // 1. Convertir todo a UTF-8 real
-                        $valor = mb_convert_encoding($valor, 'UTF-8', 'auto');
-                        // 2. Eliminar "Non-breaking spaces" ocultos de Excel (\xC2\xA0)
-                        $valor = str_replace("\xC2\xA0", ' ', $valor);
-                        // 3. Eliminar caracteres de control o espacios de ancho cero
-                        $valor = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $valor);
-                        // 4. Reducir múltiples espacios consecutivos a uno solo
-                        $valor = preg_replace('/\s+/', ' ', $valor);
-                        return trim($valor);
+                    $valorProg = trim($col[6] ?? '');
+                    $idProg    = ($valorProg === '') ? 99 : (int)$valorProg; 
+                    
+                    $nivel     = $this->sanitizarTexto($col[7] ?? 'Tecnólogo');
+                    $nivelesValidos = ['Técnico', 'Tecnólogo', 'Profesional', 'Postgrado', 'Especializacion'];
+                    if (!in_array($nivel, $nivelesValidos)) {
+                        $nivel = 'Tecnólogo';
+                    }
+                    
+                    $celular   = preg_replace('/[^0-9]/', '', $this->sanitizarTexto($col[8] ?? ''));
+
+                    // Validaciones básicas
+                    if (empty($doc)) {
+                        $stats['omitidos']++;
+                        $stats['errores'][] = "Fila $filaNum: Documento vacío. (Omitido)";
+                        $this->pdo->rollBack();
+                        continue; 
                     }
 
-                    private function limpiarDocumento($doc) {
-                        $doc = $this->sanitizarTexto($doc);
-                        // Expresión Regular: Mantiene SOLO letras y números. 
-                        // Si en el Excel escriben "1.090.456-A", esto lo convierte en "1090456A".
-                        return preg_replace('/[^a-zA-Z0-9]/', '', $doc);
+                    $idTipoPersona = $this->mapaComunidad[$comunidad] ?? 5;
+
+                    // B. GESTIÓN DE DUPLICADOS
+                    $personaModel = new Persona();
+                    $persona = $personaModel->getByDocumento($doc);
+
+                    $esNuevo = false;
+
+                    if ($persona) {
+                        $stats['omitidos']++;
+                        $stats['errores'][] = "Fila $filaNum: El documento $doc ya existe en el sistema. (Omitido)";
+                        $this->pdo->rollBack();
+                        continue; 
+                    } else {
+                        $idPersona = $personaModel->create([
+                            'tipo_documento' => $tipoDoc,
+                            'numero_documento' => $doc,
+                            'nombres' => $nombres,
+                            'apellidos' => $apellidos,
+                            'correo_institucional' => $correo,
+                            'telefono' => !empty($celular) ? $celular : null,
+                            'id_tipo_persona' => $idTipoPersona
+                        ]);
+                        $esNuevo = true; 
                     }
 
-    // --- MÉTODOS AUXILIARES ---
+                    // C. GESTIÓN DE HISTORIAL ACADÉMICO
+                    if (!$this->existePrograma($idProg)) {
+                        $idProg = 99;
+                    }
+
+                    $historial = new HistorialAcademico();
+                    $historial->guardarOActualizar([
+                        'persona_id' => $idPersona,
+                        'periodo_id' => $idPeriodo,
+                        'id_programa' => $idProg,
+                        'id_tipo_persona' => $idTipoPersona, 
+                        'nivel_formacion' => $nivel,
+                        'semestre_cursado' => 0
+                    ]);
+
+                    $this->pdo->commit();
+
+                    if ($esNuevo) {
+                        $stats['nuevos']++;
+                    }
+
+                } catch (Exception $e) {
+                    if ($this->pdo->inTransaction()) {
+                        $this->pdo->rollBack();
+                    }
+                    $stats['omitidos']++;
+                    $stats['errores'][] = "Fila $filaNum ($doc): " . $this->traducirError($e->getMessage());
+                }
+            }
+
+            return $stats;
+
+        } catch (Exception $e) {
+            return ['error_fatal' => "Error crítico del sistema: " . $e->getMessage()];
+        }
+    }
+
+    // --- MÉTODOS DE HIGIENE DE DATOS ---
+
+    private function sanitizarTexto($valor) {
+        if ($valor === null) return '';
+        $valor = (string)$valor;
+        $valor = mb_convert_encoding($valor, 'UTF-8', 'auto');
+        $valor = str_replace("\xC2\xA0", ' ', $valor);
+        $valor = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $valor);
+        $valor = preg_replace('/\s+/', ' ', $valor);
+        return trim($valor);
+    }
+
+    private function limpiarDocumento($doc) {
+        $doc = $this->sanitizarTexto($doc);
+        return preg_replace('/[^a-zA-Z0-9]/', '', $doc);
+    }
 
     private function existePrograma($id) {
         $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM programas WHERE id_programa = ?");
@@ -199,9 +210,8 @@ class ImportService {
     private function traducirError($msg) {
         if (strpos($msg, '1048') !== false) return "Falta un dato obligatorio en la fila.";
         if (strpos($msg, '1062') !== false) return "Registro duplicado en la base de datos.";
-        // 🔥 CORREGIDO: El 1452 puede ser por la persona, el programa o el periodo
         if (strpos($msg, '1452') !== false) return "Error de integridad: El programa, rol o periodo no coinciden en BD.";
-        if (strpos($msg, '1265') !== false) return "Dato truncado: Un campo de texto (como Nivel) excede el límite permitido.";
+        if (strpos($msg, '1265') !== false) return "Dato truncado: Un campo excede el límite permitido.";
         return $msg;
     }
 }

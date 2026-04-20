@@ -34,8 +34,7 @@
 
                             <div class="col-md-6 mb-2">
                                 <label class="form-label fw-bold">Carrera / Programa</label>
-                                <select name="id_programa" class="form-select" required>
-                                    <option value="">Seleccione Carrera...</option>
+                                <select name="id_programa" id="select-programa-admin" class="form-select" required placeholder="Escribe para buscar carrera...">                                    <option value="">Seleccione Carrera...</option>
                                     <?php foreach($programas as $prog): ?>
                                         <option value="<?= $prog['id_programa'] ?>" <?= (isset($persona['id_programa']) && $persona['id_programa'] == $prog['id_programa']) ? 'selected' : '' ?>>
                                             <?= htmlspecialchars($prog['nombre_programa']) ?>
@@ -51,11 +50,15 @@
                                     <option value="TI" <?= $persona['tipo_documento'] == 'TI' ? 'selected' : '' ?>>Tarjeta Identidad</option>
                                     <option value="PPT" <?= $persona['tipo_documento'] == 'PPT' ? 'selected' : '' ?>>PPT</option>
                                     <option value="CE" <?= $persona['tipo_documento'] == 'CE' ? 'selected' : '' ?>>Extranjería</option>
+                                    <option value="Pasaporte" <?= $persona['tipo_documento'] == 'Pasaporte' ?'seledted' :'' ?>>Pasaporte</option>
                                 </select>
                             </div>
                             <div class="col-md-8">
-                                <label class="form-label">Número de Documento</label>
-                                <input type="number" name="numero_documento" class="form-control" value="<?= $persona['numero_documento'] ?>" required>
+                                <label class="form-label">Número de Documento <span class="text-danger">*</span></label>
+                                <input type="text" name="numero_documento" class="form-control" 
+                                    value="<?= $persona['numero_documento'] ?? '' ?>" required 
+                                    placeholder="Ej: 1090..." 
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                             </div>
 
                             <div class="col-md-6">
@@ -72,8 +75,11 @@
                                 <input type="email" name="correo_institucional" class="form-control" value="<?= $persona['correo_institucional'] ?>">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Teléfono / Celular <span class="text-danger">*</span></label>
-                                <input type="text" name="telefono" class="form-control" value="<?= $persona['telefono'] ?? '' ?>" required>
+                                <label class="form-label">Teléfono / Celular</label>
+                                <input type="text" name="telefono" class="form-control" 
+                                    value="<?= $persona['telefono'] ?? '' ?>" 
+                                    placeholder="Ej: +57 313..." 
+                                    oninput="this.value = this.value.replace(/[^0-9+]/g, '')">
                             </div>
                         </div>
 
@@ -102,6 +108,17 @@ function confirmarEliminar(id) {
         window.location.href = '<?= BASE_URL ?>/dashboard/personas/eliminar/' + id;
     }
 }
+</script>
+
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        new TomSelect("#select-programa-admin", {
+            create: false,
+            sortField: { field: "text", direction: "asc" }
+        });
+    });
 </script>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

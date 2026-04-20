@@ -7,6 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    
     <style>
         body { background-color: #fff8e1; }
         .card-manual {
@@ -22,7 +24,6 @@
             padding: 20px;
             text-align: center;
         }
-        /* Clase para desvanecer la alerta */
         .fade-out {
             opacity: 0;
             transition: opacity 1s ease-out;
@@ -56,7 +57,7 @@
                     <input type="hidden" name="documento" value="<?= $documento ?>">
 
                     <div class="row g-2 mb-3">
-                            <div class="col-6">
+                        <div class="col-6">
                             <label class="form-label small fw-bold">Tipo Documento</label>
                             <select name="tipo_documento" class="form-select" required>
                                 <option value="CC">Cédula (CC)</option>
@@ -66,22 +67,44 @@
                                 <option value="PASAPORTE">Pasaporte</option>
                             </select>
                         </div>
-                            
-                        <hr><div class="col-6">
+                        <div class="col-6">
+                            <label class="form-label">Teléfono / Celular</label>
+                            <input type="text" name="telefono" class="form-control" 
+                                value="<?= $persona['telefono'] ?? '' ?>" 
+                                placeholder="Ej: +57 313..." 
+                                oninput="this.value = this.value.replace(/[^0-9+]/g, '')">
+                        </div>
+
+                        <hr>
+                        <div class="col-6">
                             <label class="form-label small fw-bold">Nombres</label>
-                            <input type="text" name="nombres" class="form-control" required 
-                                style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                            <input type="text" name="nombres" class="form-control" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
                         </div>
                         <div class="col-6">
                             <label class="form-label small fw-bold">Apellidos</label>
-                            <input type="text" name="apellidos" class="form-control" required 
-                                style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                            <input type="text" name="apellidos" class="form-control" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Correo Electrónico</label>
-                        <input type="email" name="correo" class="form-control" placeholder="ejemplo@correo.com" required>
+                        <input type="email" name="correo" class="form-control" placeholder="ejemplo@fesc.edu.co" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Programa Universitario</label>
+                        <select name="id_programa" id="select-programa" class="form-select" required placeholder="Escribe para buscar tu carrera...">
+                            <option value="">Buscar carrera...</option>
+                            <?php if(!empty($programas)): ?>
+                                <?php foreach($programas as $prog): ?>
+                                    <option value="<?= $prog['id_programa'] ?>">
+                                        <?= htmlspecialchars($prog['nombre_programa']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <option value="99">Invitado / Externo</option>
+                            <?php endif; ?>
+                        </select>
                     </div>
 
                     <div class="mb-4">
@@ -95,10 +118,7 @@
                             <option value="3">💼 Administrativo</option>
                         </select>
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold">Celular</label>
-                        <input type="tel" name="celular" class="form-control" placeholder="Ej: 3133860392" required>
-                    </div>
+
                     <div class="d-grid gap-2 text-center">
                         <small class="text-muted">
                             <i class="fas fa-info-circle me-1"></i>
@@ -115,32 +135,36 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             
-            // 1. LIMPIEZA AL VOLVER ATRÁS (BFCache fix)
-            // Detecta si la página se cargó desde la memoria (botón atrás)
+            // Inicializar el buscador de carreras en tiempo real
+            new TomSelect("#select-programa", {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                placeholder: 'Escribe para buscar...',
+                maxOptions: null // Mostrar todos los resultados que coincidan
+            });
+
+            // 1. LIMPIEZA AL VOLVER ATRÁS
             window.addEventListener('pageshow', function(event) {
                 if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
-                    // Resetea el formulario
                     document.getElementById("formManual").reset();
-                    // Reactiva el botón si estaba deshabilitado (por si acaso implementas eso luego)
                     document.getElementById("btnGuardar").disabled = false;
                 }
             });
 
-            // 2. DESVANECER ALERTAS DESPUÉS DE 5 SEGUNDOS
+            // 2. DESVANECER ALERTAS
             const alerta = document.getElementById('alerta-flotante');
             if (alerta) {
                 setTimeout(() => {
-                    alerta.classList.add('fade-out'); // Agrega clase CSS para transición
-                    setTimeout(() => {
-                        alerta.remove(); // Elimina del DOM después de la transición
-                    }, 1000); // Espera 1 segundo a que termine la transición
-                }, 5000); // 5000ms = 5 segundos
+                    alerta.classList.add('fade-out');
+                    setTimeout(() => { alerta.remove(); }, 1000);
+                }, 5000);
             }
         });
     </script>
-
 </body>
 </html>
