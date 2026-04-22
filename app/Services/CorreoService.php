@@ -71,4 +71,28 @@ class CorreoService {
             return false;
         }
     }
+
+    public function enviarBackupDB($rutaArchivoSQL) {
+        try {
+            $this->mail->clearAddresses();
+            // Se envía al propio correo configurado en el .env (El correo del sistema)
+            $this->mail->addAddress($_ENV['SMTP_USER'], 'Administrador del Sistema');
+            $this->mail->isHTML(true);
+            $this->mail->Subject = '📦 Backup Automático de Base de Datos - Perfil Global V2';
+            
+            $fecha = date('d/m/Y h:i A');
+            $this->mail->Body = "
+                <h2 style='color: #198754;'>Copia de Seguridad Exitosa</h2>
+                <p>Se ha generado un respaldo automático de la base de datos el <strong>{$fecha}</strong>.</p>
+                <p>El archivo <b>.sql</b> se encuentra adjunto a este correo. Guárdalo en un lugar seguro.</p>
+            ";
+            
+            // Adjuntamos el archivo .sql generado
+            $this->mail->addAttachment($rutaArchivoSQL);
+            
+            return $this->mail->send();
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
 }

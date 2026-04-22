@@ -3,25 +3,20 @@
         <h2 class="fw-bold"><i class="fas fa-users-cog me-2 text-primary"></i>Equipo de Trabajo</h2>
         <p class="text-muted">Administra los accesos de Monitores y Administradores.</p>
     </div>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
+    <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
         <i class="fas fa-plus me-2"></i>Nuevo Usuario
     </button>
 </div>
 
-<?php if(isset($_GET['success'])): ?>
-    <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 border-start border-4 border-success">
-        <i class="fas fa-check-circle me-2"></i> Operación realizada con éxito.
+<?php if(isset($_SESSION['flash'])): ?>
+    <div class="alert alert-<?= $_SESSION['flash']['type'] ?> alert-dismissible fade show shadow-sm border-0 border-start border-4 border-<?= $_SESSION['flash']['type'] ?>">
+        <?= $_SESSION['flash']['msg'] ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+    <?php unset($_SESSION['flash']); ?>
 <?php endif; ?>
 
-<?php if(isset($_GET['error']) && $_GET['error'] == 'correo_duplicado'): ?>
-    <div class="alert alert-danger shadow-sm border-0 border-start border-4 border-danger">
-        <i class="fas fa-exclamation-triangle me-2"></i> El correo ingresado ya existe en el sistema.
-    </div>
-<?php endif; ?>
-
-<div class="card border-0 shadow-sm">
+<div class="card border-0 shadow-sm mb-5">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -29,60 +24,90 @@
                     <tr>
                         <th class="ps-4 py-3">Usuario</th>
                         <th>Rol</th>
-                        <th>Estado</th>
+                        <th class="text-center">Estado</th>
                         <th class="text-end pe-4">Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <?php if(empty($usuarios)): ?>
+                
+                <?php if(empty($usuarios)): ?>
+                    <tbody>
                         <tr>
                             <td colspan="4" class="text-center py-5 text-muted">
                                 <i class="fas fa-user-friends fa-3x mb-3 opacity-25"></i>
                                 <br>No hay otros usuarios registrados aún.
                             </td>
                         </tr>
-                    <?php else: ?>
-                        <tbody>
-                            <?php foreach($usuarios as $u): ?>
-                                <?php $esActivo = ($u['deleted_at'] == null); ?>
+                    </tbody>
+                <?php else: ?>
+                    <tbody>
+                        <?php foreach($usuarios as $u): ?>
+                            <?php $esActivo = ($u['deleted_at'] === null); ?>
+                            
+                            <tr class="<?= !$esActivo ? 'table-secondary text-muted' : '' ?>">
                                 
-                                <tr class="<?= !$esActivo ? 'table-secondary text-muted' : '' ?>">
-                                    <td><?= $u['id'] ?></td>
-                                    <td>
-                                        <strong><?= $u['nombres'] ?> <?= $u['apellidos'] ?></strong>
-                                        <?php if(!$esActivo): ?>
-                                            <span class="badge bg-danger ms-2">Inactivo</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-success ms-2">Activo</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><?= $u['correo'] ?></td>
-                                    <td><?= ucfirst($u['rol']) ?></td>
-                                    <td>
-                                        <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/editar/<?= $u['id'] ?>" class="btn btn-warning btn-sm" title="Editar">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width:38px;height:38px;font-size:15px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold"><?= htmlspecialchars($u['nombres'] . ' ' . $u['apellidos']) ?></div>
+                                            <div class="text-muted small"><?= htmlspecialchars($u['correo']) ?></div>
+                                        </div>
+                                    </div>
+                                </td>
 
-                                        <?php if($esActivo): ?>
-                                            <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/estado/<?= $u['id'] ?>" 
-                                            class="btn btn-outline-danger btn-sm" 
-                                            onclick="return confirm('¿Deseas desactivar este usuario? No podrá iniciar sesión hasta que lo actives nuevamente. Su información no será eliminada.');"
-                                            title="Desactivar acceso">
-                                                <i class="fas fa-ban"></i>
-                                            </a>
-                                        <?php else: ?>
-                                            <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/estado/<?= $u['id'] ?>" 
-                                            class="btn btn-outline-success btn-sm" 
-                                            title="Reactivar acceso">
-                                                <i class="fas fa-check"></i>
-                                            </a>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-</tbody>
-                    <?php endif; ?>
-                </tbody>
+                                <td>
+                                    <?php if($u['rol'] === 'superadmin'): ?>
+                                        <span class="badge bg-dark bg-opacity-10 text-dark rounded-pill px-3">
+                                            <i class="fas fa-crown me-1"></i>SuperAdmin
+                                        </span>
+                                    <?php elseif($u['rol'] === 'admin'): ?>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3">
+                                            <i class="fas fa-shield-alt me-1"></i>Admin
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">
+                                            <i class="fas fa-user-check me-1"></i>Monitor
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+
+                                <td class="text-center">
+                                    <?php if($esActivo): ?>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Activo</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3">Inactivo</span>
+                                    <?php endif; ?>
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    
+                                    <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/editar/<?= $u['id'] ?>" 
+                                       class="btn btn-sm btn-light text-primary border shadow-sm me-1" title="Editar">
+                                        <i class="fas fa-pen"></i>
+                                    </a>
+
+                                    <?php if($esActivo): ?>
+                                        <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/estado/<?= $u['id'] ?>" 
+                                           class="btn btn-sm btn-outline-danger shadow-sm" 
+                                           title="Desactivar Usuario"
+                                           onclick="return confirm('¿Seguro que deseas desactivar a este usuario? Perderá el acceso al sistema.')">
+                                            <i class="fas fa-ban"></i>
+                                        </a>
+                                    <?php else: ?>
+                                        <a href="<?= BASE_URL ?>/dashboard/admin/usuarios/estado/<?= $u['id'] ?>" 
+                                           class="btn btn-sm btn-success shadow-sm" 
+                                           title="Reactivar Usuario"
+                                           onclick="return confirm('¿Seguro que deseas volver a habilitar a este usuario?')">
+                                            <i class="fas fa-check-circle me-1"></i> Reactivar
+                                        </a>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                <?php endif; ?>
             </table>
         </div>
     </div>
@@ -137,7 +162,7 @@
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary px-4">Crear Usuario</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">Crear Usuario</button>
                 </div>
             </form>
         </div>

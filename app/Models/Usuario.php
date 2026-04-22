@@ -18,26 +18,22 @@ class Usuario {
        MÉTODOS QUE YA TENÍAS
     ========================== */
 
-    public function getAllExcept($currentId) {
-        $sql = "SELECT * FROM {$this->table} 
-                WHERE id != :id  
-                ORDER BY id DESC";
+    // Trae a todos para que el Superadmin pueda ver a los inactivos y reactivarlos
+    public function getAllExcept($id) {
+        // Asegúrate de NO tener un "WHERE deleted_at IS NULL" aquí
+        $sql = "SELECT * FROM usuarios_sistema WHERE id != :id ORDER BY rol ASC, nombres ASC";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([':id' => $currentId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     // 2. NUEVO: Función "Interruptor" (Toggle)
+    // Alterna entre activo (NULL) e inactivo (FECHA)
     public function toggleEstado($id) {
-        // Esta consulta mágica revisa: 
-        // Si deleted_at es NULO (está activo) -> Pone la fecha actual (lo desactiva)
-        // Si tiene fecha (está desactivado) -> Pone NULL (lo reactiva)
-        $sql = "UPDATE {$this->table} 
-                SET deleted_at = IF(deleted_at IS NULL, NOW(), NULL) 
-                WHERE id = :id";
-        
+        // Si tiene fecha, lo pone en NULL (Activa). Si es NULL, le pone fecha (Desactiva).
+        $sql = "UPDATE usuarios_sistema SET deleted_at = IF(deleted_at IS NULL, NOW(), NULL) WHERE id = :id";
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([':id' => $id]);
+        return $stmt->execute(['id' => $id]);
     }
 
 
