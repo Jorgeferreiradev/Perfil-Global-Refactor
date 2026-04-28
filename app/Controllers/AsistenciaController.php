@@ -106,22 +106,24 @@ class AsistenciaController {
 public function guardarManual() {
         // 1. Recogida básica
         $token = $_POST['token'];
-        $idTipo = (int) ($_POST['id_tipo'] ?? 5);
+        $idTipo = (int) ($_POST['id_tipo'] ?? '');
+        $idPrograma = (int) ($_POST['id_programa'] ?? '');
 
+        
         // 2. SANITIZACIÓN AGRESIVA (Data Hygiene)
         // Eliminamos espacios al inicio/final y dobles espacios internos
         $nombres = trim(preg_replace('/\s+/', ' ', $_POST['nombres']));
         $apellidos = trim(preg_replace('/\s+/', ' ', $_POST['apellidos']));
         $documento = trim($_POST['documento']); // Solo números y sin espacios
         
-        // Atrapamos el celular y el tipo de documento real ---
-        $celular = trim($_POST['celular'] ?? null); 
+        // Atrapamos el teléfono y el tipo de documento real ---
+        $telefono = trim($_POST['telefono'] ?? null); 
         $tipoDoc = $_POST['tipo_documento'] ?? 'CC'; 
         // -----------------------------------------------------------------
                 
         // VALIDACIÓN SENIOR DE LONGITUD
-        if (strlen($documento) < 6 || strlen($documento) > 15) {
-            die("Error: El documento debe tener entre 6 y 15 dígitos reales.");
+        if (strlen($documento) < 6 || strlen($documento) > 11) {
+            die("Error: El documento debe tener entre 6 y 11 dígitos reales.");
         }
 
         // Limpieza de email
@@ -142,8 +144,9 @@ public function guardarManual() {
             'nombres'   => strtoupper($nombres), // Convertimos a mayúsculas limpias
             'apellidos' => strtoupper($apellidos),
             'correo'    => $correoLimpio,
-            'celular'  => $celular,
+            'telefono'  => $telefono,
             'id_tipo'   => $idTipo,
+            'id_programa' => $idPrograma,
             'estado'    => $estado
         ];
 

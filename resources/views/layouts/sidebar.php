@@ -2,6 +2,11 @@
     // Capturamos la URL actual para que el menú se pinte solo
     $urlActual = $_SERVER['REQUEST_URI']; 
     $rolActual = $_SESSION['user_rol'] ?? '';
+
+    // 🔥 FIX SENIOR: El menú lateral siempre hace el conteo en tiempo real.
+    // Adiós al bug de la sesión desincronizada.
+    $personaModelSidebar = new \App\Models\Persona();
+    $pendientesEnTiempoReal = $personaModelSidebar->contarPendientes();
 ?>
 <nav class="sidebar shadow-sm" id="sidebar">
     <div class="py-3 px-3 text-uppercase small fw-bold text-muted">Operación</div>
@@ -40,9 +45,9 @@
                 <span>
                     <i class="fas fa-user-clock me-3" style="width:20px"></i> Aprobaciones
                 </span>
-                <?php if (!empty($_SESSION['pendientes_count'])): ?>
+                <?php if ($pendientesEnTiempoReal > 0): ?>
                     <span class="badge rounded-pill bg-danger">
-                        <?= $_SESSION['pendientes_count'] ?>
+                        <?= $pendientesEnTiempoReal ?>
                     </span>
                 <?php endif; ?>
             </div>

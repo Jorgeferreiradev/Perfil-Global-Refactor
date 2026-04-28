@@ -119,6 +119,7 @@ class Persona {
     public function create($data) {
         $tipo = !empty($data['id_tipo_persona']) ? $data['id_tipo_persona'] : 1; 
 
+        // 🔥 Aquí procesamos el teléfono. Si viene vacío, se guarda como NULL automáticamente
         $sql = "INSERT INTO personas (tipo_documento, numero_documento, nombres, apellidos, correo_institucional, telefono, id_tipo_persona, estado_aprobacion) 
                 VALUES (:td, :nd, :nom, :ape, :email, :tel, :tipo, 'activo')";
         
@@ -129,13 +130,12 @@ class Persona {
             ':nom' => $data['nombres'],
             ':ape' => $data['apellidos'],
             ':email' => $data['correo_institucional'],
-            ':tel' => $data['telefono'] ?? null,
+            ':tel' => !empty($data['telefono']) ? $data['telefono'] : null,
             ':tipo' => $tipo
         ]);
 
         $idPersona = $this->pdo->lastInsertId();
 
-        // 🔥 FIX: Ahora usamos el id_programa que viene del formulario, o 99 si no hay nada.
         $programa = !empty($data['id_programa']) ? $data['id_programa'] : 99;
         $periodoActual = $_SESSION['periodo_vista_id'];
 
@@ -154,36 +154,42 @@ class Persona {
 
     public function createManual($data) {
         $sql = "INSERT INTO personas (
-                    tipo_documento, numero_documento, 
+                    id_tipo_persona, tipo_documento, numero_documento, 
                     nombres, apellidos, 
                     correo_institucional, telefono, estado_aprobacion
                 ) VALUES (
-                    :td, :nd, :nom, :ape, :mail, :tel, :estado
+                    :tipo, :td, :nd, :nom, :ape, :mail, :tel, :estado
                 )";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
+            ':tipo'   => $data['id_tipo'],
             ':td'     => $data['tipo_doc'],
             ':nd'     => $data['documento'],
             ':nom'    => $data['nombres'],
             ':ape'    => $data['apellidos'],
             ':mail'   => $data['correo'],
-            ':tel'    => $data['celular'],
+            ':tel'    => !empty($data['telefono']) ? $data['telefono'] : null,
             ':estado' => $data['estado']
         ]);
 
         $idPersona = $this->pdo->lastInsertId();
+        // 🔥 FIX: Usamos el programa capturado y el periodo ACTIVO del sistema
+        $periodoActual = $_SESSION['periodo_vista_id'] ?? 1;
+        
 
         $sqlH = "INSERT INTO historial_academico (
                     persona_id, id_tipo_persona, id_programa, periodo_id
                 ) VALUES (
-                    :pid, :tipo, 99, 1
+                    :pid, :tipo, :prog, :periodo
                 )";
 
         $stmtH = $this->pdo->prepare($sqlH);
         $stmtH->execute([
-            ':pid'  => $idPersona,
-            ':tipo' => $data['id_tipo']
+            ':pid'     => $idPersona,
+            ':tipo'    => $data['id_tipo'],
+            ':prog'    => $data['id_programa'], 
+            ':periodo' => $periodoActual
         ]);
 
         return $idPersona;
@@ -211,7 +217,7 @@ class Persona {
             ':nom' => $data['nombres'],
             ':ape' => $data['apellidos'],
             ':email' => $data['correo_institucional'],
-            ':tel' => $data['telefono'] ?? null,
+            ':tel' => !empty($data['telefono']) ? $data['telefono'] : null,
             ':tipo' => $data['id_tipo_persona'],
             ':id' => $id
         ]);
@@ -243,11 +249,16 @@ class Persona {
             ->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getPendientes() {
-        $sql = "SELECT p.*, t.nombre_tipo
+  public function getPendientes() {
+        //  FIX: Aquí le decimos explícitamente que traiga el HISTORIAL
+        $sql = "SELECT 
+                    p.*, 
+                    t.nombre_tipo, 
+                    pr.nombre_programa 
                 FROM personas p
                 INNER JOIN historial_academico h ON p.id = h.persona_id
                 INNER JOIN tipos_personas t ON h.id_tipo_persona = t.id_tipo
+                LEFT JOIN programas pr ON h.id_programa = pr.id_programa
                 WHERE p.estado_aprobacion = 'pendiente'
                 ORDER BY p.id DESC";
 

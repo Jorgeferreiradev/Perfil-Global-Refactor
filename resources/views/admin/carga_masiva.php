@@ -49,7 +49,7 @@
     <div class="col-md-7">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-dark text-white py-3">
-                <h6 class="mb-0"><i class="fas fa-file-import me-2"></i>Importar Archivo Maestro</h6>
+                <h6 class="mb-0"><i class="fas fa-file-import me-2"></i>Importar Plantilla_Oficial_FESC</h6>
             </div>
             <div class="card-body p-4">
                 <form action="<?= BASE_URL ?>/dashboard/admin/carga-masiva/procesar" method="POST" enctype="multipart/form-data">
@@ -61,7 +61,7 @@
                             Arrastra tu archivo aquí o haz clic para buscar
                         </label>
                         <input class="form-control" type="file" id="archivo" name="archivo_excel" accept=".csv, .xlsx, .xls" required>
-                        <div class="form-text mt-2">Formatos aceptados: .xlsx, .csv (Máx 10MB)</div>
+                        <div class="form-text mt-2">Formatos aceptados: .xlsx, .csv (Máx 15MB)</div>
                     </div>
 
                     <div class="alert alert-warning d-flex align-items-start small mt-3">

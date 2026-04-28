@@ -1,8 +1,19 @@
 <footer class="mt-auto pt-3 border-top text-center text-muted small">
+
+<p>
+    &copy; <?= date('Y') ?> · Plataforma de Eventos Bienestar Institucional · FESC   <br>
+    PerfilGlobal · Desarrollado por J. Ferreira 
+</p>
+
+
     <p>
-    &copy; <?= date('Y') ?> | Fundación de Estudios Superiores Comfanorte · FESC |  
-    PerfilGlobal · Plataforma de Eventos Bienestar Institucional.
+    
     </p>
+
+
+
+
+
     </footer>
 <main>
 </main> </div> 

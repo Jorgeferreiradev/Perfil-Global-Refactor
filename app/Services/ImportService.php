@@ -87,14 +87,22 @@ class ImportService {
 
                 try {
                     // SANITIZACIÓN DE DATOS EXTREMA
+                    // =======================================================
+                    // 🔥 MAPEO CORREGIDO (Alineado con el nuevo Excel)
+                    // =======================================================
                     $tipoDoc   = $this->sanitizarTexto($col[0] ?? 'CC');
                     $doc       = $this->limpiarDocumento($col[1] ?? ''); 
                     $nombres   = strtoupper($this->sanitizarTexto($col[2] ?? ''));
                     $apellidos = strtoupper($this->sanitizarTexto($col[3] ?? ''));
                     $correo    = strtolower($this->sanitizarTexto($col[4] ?? ''));
-                    $comunidad = strtolower($this->sanitizarTexto($col[5] ?? 'Estudiante'));
                     
-                    // 🔥 LÓGICA SENIOR: Si la fila está totalmente en blanco (artefactos de Excel), paramos el ciclo.
+                    // Índice 5 ahora es el Teléfono
+                    $celular   = preg_replace('/[^0-9]/', '', $this->sanitizarTexto($col[5] ?? ''));
+                    
+                    // Índice 6 ahora es la Comunidad
+                    $comunidad = strtolower($this->sanitizarTexto($col[6] ?? 'Estudiante'));
+                    
+                    // Lógica para detectar filas fantasma o corruptas
                     if (empty($doc) && empty($nombres) && empty($apellidos) && empty($correo)) {
                         $this->pdo->rollBack();
                         break; 
@@ -102,16 +110,18 @@ class ImportService {
 
                     $stats['procesados']++;
 
-                    $valorProg = trim($col[6] ?? '');
+                    // Índice 7 ahora es el ID_Prog
+                    $valorProg = trim($col[7] ?? '');
                     $idProg    = ($valorProg === '') ? 99 : (int)$valorProg; 
                     
-                    $nivel     = $this->sanitizarTexto($col[7] ?? 'Tecnólogo');
+                    // Índice 8 ahora es el Nivel
+                    $nivel     = $this->sanitizarTexto($col[8] ?? 'Tecnólogo');
                     $nivelesValidos = ['Técnico', 'Tecnólogo', 'Profesional', 'Postgrado', 'Especializacion'];
                     if (!in_array($nivel, $nivelesValidos)) {
                         $nivel = 'Tecnólogo';
                     }
+                    // =======================================================
                     
-                    $celular   = preg_replace('/[^0-9]/', '', $this->sanitizarTexto($col[8] ?? ''));
 
                     // Validaciones básicas
                     if (empty($doc)) {

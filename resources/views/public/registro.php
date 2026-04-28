@@ -119,23 +119,34 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Seleccionamos todas las alertas que tengan la clase 'auto-dismiss'
             const alertas = document.querySelectorAll('.auto-dismiss');
             
-            alertas.forEach(function(alerta) {
-                // Esperar 4 segundos antes de empezar a desvanecer
+            // 1. LÓGICA PARA ÉXITO (10 segundos y redirección)
+            <?php if (isset($_GET['success'])): ?>
+                let countdown = 10;
+                
+                // Opcional: Si quieres mostrar un contador visual en consola o en el alert
+                console.log("Redirigiendo en 10 segundos...");
+                
                 setTimeout(() => {
-                    alerta.classList.add('fade-out'); // Añade la clase CSS de transparencia
-                    
-                    // Esperar 1 segundo más (lo que dura la transición CSS) y borrar del DOM
+                    // Redirige a la misma URL pero cortando todo lo que esté después del '?'
+                    // Esto limpia el ?success=... y devuelve el formulario limpio con el token
+                    window.location.href = window.location.href.split('?')[0];
+                }, 10000); // 10000 milisegundos = 10 segundos exactos
+
+            // 2. LÓGICA PARA ERRORES (4 segundos y desvanecer, sin recargar)
+            <?php else: ?>
+                alertas.forEach(function(alerta) {
                     setTimeout(() => {
-                        alerta.remove();
-                        // Opcional: Si quieres recargar la página limpia tras éxito
-                        // window.location.href = window.location.pathname; 
-                    }, 1000); 
-                    
-                }, 4000); // Tiempo visible: 4000ms
-            });
+                        alerta.classList.add('fade-out'); 
+                        
+                        setTimeout(() => { 
+                            alerta.remove(); 
+                        }, 1000); 
+                        
+                    }, 4000); // 4 segundos para leer el error
+                });
+            <?php endif; ?>
         });
     </script>
 </body>

@@ -10,6 +10,7 @@ use App\Services\CorreoService;
  * -----------------------------
  * Maneja TODAS las operaciones exclusivas del rol ADMIN:
  * - Aprobación de registros (Pendientes)
+ * - Programas academicos
  * - Gestión de usuarios del sistema
  * - Carga masiva de datos
  */
@@ -232,7 +233,7 @@ public function cambiarEstadoUsuario($id) {
 
         // 1. OBTENER INFORMACIÓN DEL OBJETIVO
         $usuarioModel = new Usuario();
-        $targetUser = $usuarioModel->getById($id);
+        $targetUser = $usuarioModel->getByIdAll($id);
 
         if (!$targetUser) {
             header('Location: ' . BASE_URL . '/dashboard/admin/usuarios?error=no_encontrado');
@@ -248,8 +249,8 @@ public function cambiarEstadoUsuario($id) {
 
         // 3. CANDADO DE JERARQUÍA (ADMIN NO MATA ADMIN)
         // Si el usuario objetivo es ADMIN, prohibimos la acción
-        if ($targetUser['rol'] === 'admin') {
-            $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Por seguridad, no puedes desactivar a otro Administrador. Contacta a soporte TI.'];
+        if ($targetUser['rol'] === 'superadmin') {
+            $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Por seguridad, no puedes desactivar a otro SuperAdministrador. Contacta a soporte TI.'];
             header('Location: ' . BASE_URL . '/dashboard/admin/usuarios');
             exit;
         }

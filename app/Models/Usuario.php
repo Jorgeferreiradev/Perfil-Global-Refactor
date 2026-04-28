@@ -90,6 +90,14 @@ class Usuario {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    // NUEVA FUNCIÓN: Busca al usuario sin importar si está activo o inactivo
+    public function getByIdAll($id) {
+        $sql = "SELECT * FROM {$this->table} WHERE id = :id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     // ✔ Actualizar Perfil (con o sin password)
     public function updatePerfil($id, $nombres, $apellidos, $password = null) {
 

@@ -42,6 +42,7 @@
                         <select name="rol" class="form-select" required>
                             <option value="monitor" <?= $usuario['rol'] == 'monitor' ? 'selected' : '' ?>>Monitor</option>
                             <option value="admin" <?= $usuario['rol'] == 'admin' ? 'selected' : '' ?>>Administrador</option>
+                            <option value="superadmin" <?= $usuario['rol'] == 'superadmin' ? 'selected' : '' ?>>SuperAdministrador</option>
                         </select>
                     </div>
                 </div>

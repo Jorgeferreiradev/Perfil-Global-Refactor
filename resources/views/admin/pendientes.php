@@ -26,6 +26,8 @@
                             <th>Documento</th>
                             <th>Nombre Completo</th>
                             <th>Tipo</th>
+                            <th>Programa</th>
+                            <th>Teléfono</th>
                             <th>Correo</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -40,6 +42,10 @@
                                         <?= $p['nombre_tipo'] ?>
                                     </span>
                                 </td>
+                                <td class="small text-muted">
+                                    <?= $p['nombre_programa'] ?? '<span class="badge bg-warning text-dark">Invitado / Externo</span>' ?>
+                                </td>
+                                <td class="small text-muted"><?= $p['telefono'] ?? 'Sin teléfono' ?></td>
                                 <td class="small text-muted"><?= $p['correo_institucional'] ?></td>
                                 <td class="text-end">
                                     <a href="<?= BASE_URL ?>/dashboard/admin/aprobar/<?= $p['id'] ?>" 
