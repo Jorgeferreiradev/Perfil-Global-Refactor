@@ -1,4 +1,4 @@
-*.perfilglobal.sql
+*.sql
 
 # Carpeta de documentación personal y notas
 docs/
@@ -13,3 +13,7 @@ dev_notes.md
 # Archivos de configuración local que no deben ser públicos
 .env
 config/config_local.php
+
+# XAMPP/Entorno local
+phpmyadmin/
+nbproject/
