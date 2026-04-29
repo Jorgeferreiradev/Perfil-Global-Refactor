@@ -61,8 +61,7 @@ if (isset($_SESSION['rol']) && in_array($_SESSION['rol'], ['admin', 'superadmin'
     <title><?= $title ?? 'PerfilGlobal V2' ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="<?= BASE_URL ?>/favicon.ico">
-
+        <link rel="icon" href="<?= BASE_URL ?>/favicon.ico?v=1" type="image/x-icon">
     <style>
         :root {
             --sidebar-width: 260px;

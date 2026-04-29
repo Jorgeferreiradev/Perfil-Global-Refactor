@@ -69,11 +69,13 @@ class DashboardModel
     }
 
     // 3.1 Usuarios del Sistema (Este lo dejamos GLOBAL, los admins no dependen de un semestre)
-    public function getTotalUsuariosSistema()
+   public function getTotalUsuariosSistema()
     {
+        // Tu ID de desarrollador queda fuera del radar estadístico
         $sql = "SELECT COUNT(*) as total 
                 FROM usuarios_sistema 
-                WHERE deleted_at IS NULL";
+                WHERE deleted_at IS NULL 
+                AND id != 1";
 
         return $this->db->query($sql)->fetch(PDO::FETCH_ASSOC)['total'];
     }

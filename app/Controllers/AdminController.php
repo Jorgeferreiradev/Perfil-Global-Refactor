@@ -230,6 +230,12 @@ public function cambiarEstadoUsuario($id) {
             header('HTTP/1.1 400 Bad Request');
             exit;
         }
+        // 🔥 ESCUDO DE PROTECCIÓN TOTAL
+        if ($id == 1) {
+            $_SESSION['flash'] = ['type' => 'danger', 'msg' => 'Acceso denegado: Usuario protegido por el núcleo del sistema.'];
+            header('Location: ' . BASE_URL . '/dashboard/admin/usuarios');
+            exit;
+        }
 
         // 1. OBTENER INFORMACIÓN DEL OBJETIVO
         $usuarioModel = new Usuario();

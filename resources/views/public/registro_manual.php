@@ -8,7 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
-    
+    <link rel="icon" href="<?= BASE_URL ?>/favicon.ico?v=1" type="image/x-icon">
     <style>
         body { background-color: #fff8e1; }
         .card-manual {
