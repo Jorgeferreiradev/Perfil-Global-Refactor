@@ -39,8 +39,10 @@ if (isset($_SESSION['user_id']) && !isset($_SESSION['periodo_vista_id'])) {
 // 3. Instancia del Router
 $router = new \Bramus\Router\Router();
 
-$router->setBasePath('/perfilglobal_v2/public');
-
+// 🔥 SENIOR FIX: Detectar Base Path automáticamente desde config.php
+$parsedUrl = parse_url(BASE_URL, PHP_URL_PATH);
+$basePathRouter = $parsedUrl ? rtrim($parsedUrl, '/') : '';
+$router->setBasePath($basePathRouter);
 // Namespaces
 $controllers = 'App\Controllers';
 $middleware  = 'App\Middleware';

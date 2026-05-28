@@ -10,10 +10,10 @@ class Database {
 
     private function __construct() {
         // Cargar variables de entorno si usas PHP dotenv, o definir manual
-        $host = $_ENV['DB_HOST'] ?? 'localhost';
-        $db   = $_ENV['DB_NAME'] ?? 'perfilglobal_v2';
+        $host = $_ENV['DB_HOST'] ?? '127.0.0.1';
+        $db   = $_ENV['DB_NAME'] ?? 'pg';
         $user = $_ENV['DB_USER'] ?? 'root';
-        $pass = $_ENV['DB_PASS'] ?? '';
+        $pass = $_ENV['DB_PASS'] ?? 'pg_admin*';
 
         try {
             $dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";

@@ -25,7 +25,7 @@
         </div>
     <?php endif; ?>
 
-<form action="/perfilglobal_v2/public/auth/login" method="POST">        
+<form action="/perfilglobal/public/auth/login" method="POST">        
         <div class="mb-3">
             <label class="form-label">Correo Institucional</label>
             <input type="email" name="correo" class="form-control" placeholder="ejemplo@fesc.edu.co" required>

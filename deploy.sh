@@ -10,10 +10,6 @@ cd /var/www/perfilglobal.masterteam.online
 echo "📥 Descargando cambios de GitHub..."
 git pull origin main
 
-# Instalar/actualizar dependencias (sin dependencias de desarrollo y optimizando el autoloader)
-echo "📦 Actualizando dependencias de Composer..."
-sudo -u www-data composer install --no-dev --optimize-autoloader
-
 # Asegurar permisos correctos (Nginx necesita ser el propietario)
 echo "🔒 Ajustando permisos..."
 sudo chown -R www-data:www-data /var/www/perfilglobal.masterteam.online
