@@ -12,8 +12,19 @@ dev_notes.md
 
 # Archivos de configuración local que no deben ser públicos
 .env
+.env.local
+.env.*.php
 config/config_local.php
 
 # XAMPP/Entorno local
 phpmyadmin/
 nbproject/
+
+# Otros archivos locales comunes
+.DS_Store                 # macOS
+Thumbs.db                 # Windows
+*.log                     # Logs locales
+node_modules/             # Si usas Node.js
+vendor/                   # Si usas Composer
+.vscode/                  # Configuración local del editor
+.idea/                    # PhpStorm/IntelliJ
